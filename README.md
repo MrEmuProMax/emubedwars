@@ -10,6 +10,6 @@
 * **3D Engine:** Three.js
 * **Multiplayer:** PeerJS (WebRTC P2P 多人連線)
 * **Hosting:** Vercel
-* 
+  
 ## 更新 / Update
-* **2026/8/23:** 地圖更新優化
+* **2026/8/23:** 🌟加上快速配對、地圖更新優化
