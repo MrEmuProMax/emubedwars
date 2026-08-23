@@ -1,4 +1,4 @@
-# emubedwars - 3D Blocky Bed Wars
+# emubedwars - 3D Blocky BedWars
 
 👉 **[點擊這裡立刻在瀏覽器遊玩：網頁版 3D 空島床戰](https://emubedwars.vercel.app)**
 
