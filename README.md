@@ -11,7 +11,7 @@
 * **2026/8/23:** 🌟加上快速配對、地圖更新優化
 
 ## 問題回報 / Issues
-👉 **[問題回報區]()**
+👉 **[問題回報區](https://docs.google.com/forms/d/e/1FAIpQLSfnnblyE5C1KKgj6t1L0fM2p0BRHr-eE-HfE4enUVnV9Z205A/viewform?usp=publish-editor)**
 
 ## 🚀 技術棧 / Tech Stack
 * **Frontend:** Vanilla HTML5, Tailwind CSS
