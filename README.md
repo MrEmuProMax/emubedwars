@@ -6,10 +6,9 @@
 這是一款基於HTML開發的 3D 空島床戰 網頁版線上遊戲。玩家不需要下載任何麥塊客戶端，直接展開激烈的空島床戰（Bed Wars）！
 
 ## 更新 / Update
-* **2026/8/26:** 🌟修理連線問題(預計還要1週)
+* **2026/8/26:** 🌟修理連線問題、因連線問題刪除快速配對(預計還要1週)
 * **2026/8/25:** 🌟修理連線問題
 * **2026/8/24:** 🌟優化快速配對、加入GitHub連結
-* **2026/8/23:** 🌟加上快速配對、地圖更新優化
 
 ## 問題回報 / Issues
 👉 **[問題回報區](https://docs.google.com/forms/d/e/1FAIpQLSfnnblyE5C1KKgj6t1L0fM2p0BRHr-eE-HfE4enUVnV9Z205A/viewform?usp=publish-editor)**
