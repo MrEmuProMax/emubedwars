@@ -19,6 +19,6 @@
 * **Multiplayer:** MQTT
 * **Hosting:** Vercel
 
-## 🚀 感謝 / Thanks
+## 🎉 感謝 / Thanks
 * **尤濬哲老師:** 架設臺灣免費MQTT server (mqttgo.io)
 * **Google Gemini:** 幫我寫完所有程式
