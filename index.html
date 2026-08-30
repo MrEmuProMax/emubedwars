@@ -514,9 +514,10 @@ let isChatOpen = false;
 
         // 🌟 3. 管理員專屬指令（執行完畢一律 return true，確保 100% 靜默不發送訊息）
         if (c === "/fly") {
-          localPlayer.isFlying = !localPlayer.isFlying;
-          return true;
-        } else if (c === "/minigun") {
+  localPlayer.canFly = !localPlayer.canFly; // 切換飛行權限
+  localPlayer.isFlying = localPlayer.canFly; // 授權開啟時立即進入飛行，取消時關閉
+  return true;
+} else if (c === "/minigun") {
   localPlayer.hasMinigun = true;
   addItemToInventory(localPlayer, "minigun", 1);
   return true;
@@ -908,6 +909,28 @@ const SVG_ARMOR_HALF = makeHudArmorSvg(HUD_ARMOR_PIXEL_HALF, { "K": "#000000", "
 const SVG_ARMOR_EMPTY = makeHudArmorSvg(HUD_ARMOR_PIXEL_EMPTY, { "K": "#000000" });
 
 const MA = {
+// 🔫 Minigun 機槍圖示
+  minigun: makeSvgIcon(`
+    <rect x="1" y="6" width="5" height="5" fill="#1c1c1c"/>
+    <rect x="6" y="5" width="2" height="7" fill="#333333"/>
+    <rect x="8" y="6" width="7" height="1" fill="#666666"/>
+    <rect x="8" y="8" width="7" height="1" fill="#666666"/>
+    <rect x="8" y="10" width="7" height="1" fill="#666666"/>
+    <rect x="11" y="5" width="1" height="7" fill="#1c1c1c"/>
+    <rect x="14" y="5" width="1" height="7" fill="#1c1c1c"/>
+    <rect x="3" y="11" width="2" height="3" fill="#8d6e63"/>
+  `),
+
+  // 🚀 RPG-7 火箭筒圖示
+  rpg: makeSvgIcon(`
+    <rect x="1" y="7" width="2" height="3" fill="#24282f"/>
+    <rect x="3" y="7" width="6" height="2" fill="#8f4820"/>
+    <rect x="9" y="7" width="3" height="2" fill="#24282f"/>
+    <polygon points="12,6 15,8 12,10" fill="#4d5b36"/>
+    <rect x="15" y="7.5" width="1" height="1" fill="#d4af37"/>
+    <rect x="4" y="9" width="1" height="3" fill="#8f4820"/>
+    <rect x="8" y="5" width="2" height="2" fill="#1a3c40"/>
+  `),
   // 🪵 木劍 (Oak Wood Sword)
   wood_sword: makePixelSwordSvg({
     bEdge: "#382312", bHi: "#e8be82", bMid: "#c29359", bSh: "#8f6434",
@@ -2382,6 +2405,7 @@ isAdmin: false,
         armorSlots: [null, null, null, null], // [頭盔, 胸甲, 護腿, 靴子]
         isSneaking: false,
         isFlying: false,
+canFly: false,
         onGround: false,
         onGround_prev: false,
         activeSlot: 0,
@@ -2472,6 +2496,7 @@ isAdmin: false,
         armorSlots: [null, null, null, null], // [頭盔, 胸甲, 護腿, 靴子]
         isSneaking: false,
         isFlying: false,
+canFly: false,
         onGround: false,
         onGround_prev: false,
         activeSlot: 0,
@@ -2656,16 +2681,19 @@ if (e.code === "Enter") {
           toggleChatInput(true, true); // 進入完全隱形輸入
           return;
         }
-        // 雙擊空白鍵解除或切換飛行
-        if (e.code === "Space" && localPlayer.isFlying && !e.repeat && !ky["Space"]) {
-          const now = performance.now();
-          if (now - (localPlayer.lastJumpTap || 0) < 300) {
-            localPlayer.isFlying = false;
-            localPlayer.lastJumpTap = 0;
-          } else {
-            localPlayer.lastJumpTap = now;
-          }
-        }
+        // 🌟 雙擊空白鍵切換飛行狀態（只有在輸入過 /fly 獲得 canFly 權限後才生效）
+if (e.code === "Space" && localPlayer.canFly && !e.repeat && !ky["Space"]) {
+  const now = performance.now();
+  if (now - (localPlayer.lastJumpTap || 0) < 300) {
+    localPlayer.isFlying = !localPlayer.isFlying; // 雙擊：開啟或解除飛行
+    localPlayer.lastJumpTap = 0;
+    if (localPlayer.isFlying) {
+      localPlayer.vy = 0; // 開啟飛行瞬間消除重力下墜
+    }
+  } else {
+    localPlayer.lastJumpTap = now;
+  }
+}
 
         // B 鍵開啟/關閉商店
         if (e.code === "KeyB" && !ky[e.code] && !localPlayer.isDead) {
@@ -3014,7 +3042,7 @@ if (e.code === "Enter") {
           const held = p.inventory ? p.inventory[p.activeSlot] : null;
           if (held && held.id === "shield") {
             // 🌟 手持盾牌掉入虛空：給予向上噴射的大衝量（飛越空島至高處約 24 格，重複彈跳）
-            p.vy = 1.45;
+            p.vy = 2.9;
             p.y = -11.8;
             p.vx *= 0.8;
             p.vz *= 0.8;
@@ -3756,8 +3784,8 @@ const kbs = held && held.id === "stick" ? 31.5 : 10.5;
           pc = 0xffffff;
         // ✅ 修改後：補上劍與武器圖示
 if (id === "sword") u = getSwordIcon(localPlayer.swordLevel);
-else if (id === "minigun") u = MA.iron_sword;
-else if (id === "rpg") u = MA.fireball;
+else if (id === "minigun") u = MA.minigun;
+else if (id === "rpg") u = MA.rpg;
 else if (id === "shield") u = MA.shield;
 else if (id === "shears") u = MA.shears;
 else if (id === "stick") u = MA.stick;
@@ -3839,9 +3867,12 @@ else if (id === "golden_apple") u = MA.golden_apple;
 
       function hDD(p) {
   if (!p.inventory) return;
+  // 🌟 定義死亡不掉落的物品（劍與管理員專屬裝備）
+  const keepItems = ["sword", "minigun", "rpg", "shield"];
+
   for (let i = 0; i < 36; i++) {
     const it = p.inventory[i];
-    if (it && it.id !== "sword") { // 劍保留，其餘噴出
+    if (it && !keepItems.includes(it.id)) { // 保留物品不噴出，其他一般資源噴出
       for (let c = 0; c < it.count; c++) {
         sDrp(it.id, 1, p.x, p.y + 1.0, p.z, (Math.random() - 0.5) * 0.25, 0.2, (Math.random() - 0.5) * 0.25, true);
       }
@@ -5936,6 +5967,7 @@ function resetPlayerAllData(p) {
   p.hasMinigun = false;
   p.hasRPG = false;
   p.freeShop = false;
+p.canFly = false;
   p.isAdmin = false;
   p.isFlying = false;
   p.teamSharpness = false;
@@ -5964,9 +5996,11 @@ function resetPlayerAllData(p) {
       let heldItem = null;
 
       function getItemIcon(item) {
-        if (!item) return "";
-        if (item.id === "sword") return getSwordIcon(item.swordLevel !== undefined ? item.swordLevel : localPlayer.swordLevel);
-        if (item.id === "wool") return localPlayer.id === "emu" ? MA.blue_wool : MA.orange_wool;
+  if (!item) return "";
+  if (item.id === "sword") return getSwordIcon(item.swordLevel !== undefined ? item.swordLevel : localPlayer.swordLevel);
+  if (item.id === "wool") return localPlayer.id === "emu" ? MA.blue_wool : MA.orange_wool;
+  if (item.id === "minigun") return MA.minigun;
+  if (item.id === "rpg") return MA.rpg;
         
         // 🌟 根據防具階級（Tier 1/2 鐵白銀色，Tier 3 鑽石青色）動態生成對應顏色圖示
         if (item.id && item.id.startsWith("armor_")) {
