@@ -911,26 +911,105 @@ const SVG_ARMOR_EMPTY = makeHudArmorSvg(HUD_ARMOR_PIXEL_EMPTY, { "K": "#000000" 
 const MA = {
 // 🔫 Minigun 機槍圖示
   minigun: makeSvgIcon(`
-    <rect x="1" y="6" width="5" height="5" fill="#1c1c1c"/>
-    <rect x="6" y="5" width="2" height="7" fill="#333333"/>
-    <rect x="8" y="6" width="7" height="1" fill="#666666"/>
-    <rect x="8" y="8" width="7" height="1" fill="#666666"/>
-    <rect x="8" y="10" width="7" height="1" fill="#666666"/>
-    <rect x="11" y="5" width="1" height="7" fill="#1c1c1c"/>
-    <rect x="14" y="5" width="1" height="7" fill="#1c1c1c"/>
-    <rect x="3" y="11" width="2" height="3" fill="#8d6e63"/>
+    <!-- 上提把 (Carry Handle) -->
+    <rect x="4" y="2" width="4" height="1" fill="#3a3d45"/>
+    <rect x="5" y="2" width="2" height="1" fill="#6c7380"/>
+    <rect x="4" y="3" width="1" height="2" fill="#202227"/>
+    <rect x="7" y="3" width="1" height="2" fill="#202227"/>
+
+    <!-- 主機匣與散熱孔 (Receiver Body) -->
+    <rect x="2" y="4" width="5" height="1" fill="#2f323a"/>
+    <rect x="2" y="5" width="5" height="5" fill="#22252a"/>
+    <rect x="3" y="5" width="4" height="2" fill="#3d424c"/>
+    <rect x="4" y="6" width="2" height="1" fill="#656c7a"/>
+    <rect x="3" y="8" width="3" height="1" fill="#18191c"/>
+    <rect x="6" y="6" width="1" height="3" fill="#141518"/>
+
+    <!-- 後方木質握把與板機 (Rear Grip) -->
+    <rect x="0" y="7" width="2" height="1" fill="#2a1d15"/>
+    <rect x="0" y="8" width="2" height="3" fill="#6d4c38"/>
+    <rect x="0" y="9" width="1" height="2" fill="#8d6248"/>
+    <rect x="1" y="11" width="1" height="1" fill="#3a2518"/>
+    <rect x="2" y="8" width="1" height="1" fill="#1c1d20"/>
+
+    <!-- 底部驅動馬達 (Drive Motor) -->
+    <rect x="3" y="10" width="4" height="2" fill="#1a1b1f"/>
+    <rect x="3" y="10" width="1" height="2" fill="#2e3138"/>
+    <rect x="5" y="10" width="1" height="2" fill="#2e3138"/>
+    <rect x="4" y="12" width="2" height="1" fill="#141517"/>
+
+    <!-- 旋轉槍管組 (多層次金屬與高光陰影) -->
+    <rect x="7" y="5" width="8" height="1" fill="#58606e"/>
+    <rect x="7" y="5" width="6" height="1" fill="#757f91"/>
+    <rect x="7" y="6" width="8" height="1" fill="#2d3036"/>
+    <rect x="7" y="7" width="8" height="1" fill="#8893a6"/>
+    <rect x="8" y="7" width="5" height="1" fill="#b0bccf"/>
+    <rect x="7" y="8" width="8" height="1" fill="#2d3036"/>
+    <rect x="7" y="9" width="8" height="1" fill="#4d5460"/>
+    <rect x="7" y="9" width="6" height="1" fill="#636c7c"/>
+
+    <!-- 槍管金屬束環 1 & 2 (Barrel Clamp Rings) -->
+    <rect x="9" y="4" width="1" height="7" fill="#141518"/>
+    <rect x="9" y="5" width="1" height="1" fill="#3d424b"/>
+    <rect x="9" y="7" width="1" height="1" fill="#555c69"/>
+    <rect x="12" y="4" width="1" height="7" fill="#141518"/>
+    <rect x="12" y="5" width="1" height="1" fill="#3d424b"/>
+    <rect x="12" y="7" width="1" height="1" fill="#555c69"/>
+
+    <!-- 前端槍口固定盤與槍膛孔 (Muzzle Plate & Openings) -->
+    <rect x="15" y="4" width="1" height="7" fill="#141518"/>
+    <rect x="15" y="5" width="1" height="1" fill="#0b0c0d"/>
+    <rect x="15" y="7" width="1" height="1" fill="#0b0c0d"/>
+    <rect x="15" y="9" width="1" height="1" fill="#0b0c0d"/>
   `),
 
   // 🚀 RPG-7 火箭筒圖示
   rpg: makeSvgIcon(`
-    <rect x="1" y="7" width="2" height="3" fill="#24282f"/>
-    <rect x="3" y="7" width="6" height="2" fill="#8f4820"/>
-    <rect x="9" y="7" width="3" height="2" fill="#24282f"/>
-    <polygon points="12,6 15,8 12,10" fill="#4d5b36"/>
-    <rect x="15" y="7.5" width="1" height="1" fill="#d4af37"/>
-    <rect x="4" y="9" width="1" height="3" fill="#8f4820"/>
-    <rect x="8" y="5" width="2" height="2" fill="#1a3c40"/>
+    <!-- 1. 後方擴散噴嘴與尾端口 (Exhaust Nozzle) -->
+    <rect x="0" y="6" width="1" height="5" fill="#14171a"/>
+    <rect x="0" y="7" width="1" height="3" fill="#0b0d0e"/>
+    <rect x="1" y="7" width="2" height="3" fill="#22262c"/>
+    <rect x="1" y="7" width="2" height="1" fill="#3a4049"/>
+
+    <!-- 2. 中段原木/電木隔熱套筒 (Wood Heat Shield) -->
+    <rect x="3" y="6" width="1" height="5" fill="#14171a"/>
+    <rect x="4" y="7" width="3" height="3" fill="#8f4820"/>
+    <rect x="4" y="7" width="3" height="1" fill="#b35d29"/>
+    <rect x="4" y="9" width="3" height="1" fill="#5e2f15"/>
+    <rect x="7" y="6" width="1" height="5" fill="#14171a"/>
+
+    <!-- 3. 上方 PGO-7V 光學瞄準鏡與鏡片 (Optical Sight) -->
+    <rect x="4" y="4" width="3" height="2" fill="#22262c"/>
+    <rect x="4" y="4" width="2" height="1" fill="#3d434d"/>
+    <rect x="6" y="4" width="1" height="2" fill="#00838f"/>
+    <rect x="6" y="4" width="1" height="1" fill="#4dd0e1"/>
+    <rect x="5" y="6" width="1" height="1" fill="#14171a"/>
+
+    <!-- 4. 前後雙握把與板機 (Dual Grips & Trigger) -->
+    <rect x="3" y="10" width="1" height="2" fill="#6d3719"/>
+    <rect x="3" y="11" width="1" height="1" fill="#4a2511"/>
+    <rect x="6" y="10" width="1" height="3" fill="#8f4820"/>
+    <rect x="6" y="11" width="1" height="2" fill="#5e2f15"/>
+    <rect x="7" y="10" width="1" height="1" fill="#14171a"/>
+
+    <!-- 5. 前段發射鋼管與槍口套環 (Front Launch Tube) -->
+    <rect x="8" y="7" width="2" height="3" fill="#22262c"/>
+    <rect x="8" y="7" width="2" height="1" fill="#3a4049"/>
+    <rect x="10" y="6" width="1" height="5" fill="#14171a"/>
+    <rect x="10" y="7" width="1" height="3" fill="#2a2e36"/>
+
+    <!-- 6. PG-7V 火箭彈頭與黃銅引信 (Rocket Warhead & Fuze) -->
+    <rect x="11" y="8" width="1" height="1" fill="#14171a"/>
+    <rect x="12" y="7" width="1" height="3" fill="#3b4728"/>
+    <rect x="12" y="7" width="1" height="1" fill="#54653a"/>
+    <rect x="13" y="6" width="1" height="5" fill="#4d5b36"/>
+    <rect x="13" y="6" width="1" height="1" fill="#758a52"/>
+    <rect x="13" y="10" width="1" height="1" fill="#2c361e"/>
+    <rect x="14" y="7" width="1" height="3" fill="#4d5b36"/>
+    <rect x="14" y="7" width="1" height="1" fill="#758a52"/>
+    <rect x="15" y="8" width="1" height="1" fill="#fbbf24"/>
   `),
+
   // 🪵 木劍 (Oak Wood Sword)
   wood_sword: makePixelSwordSvg({
     bEdge: "#382312", bHi: "#e8be82", bMid: "#c29359", bSh: "#8f6434",
@@ -1001,8 +1080,12 @@ stick: makeSvgIcon(`
     <rect x="7" y="13" width="2" height="1" fill="#4a2e18"/>
   `),
   // 🛡️ 盾牌圖示
-  shield: makeSvgIcon('<path d="M3 2h10v6c0 4-5 6-5 6s-5-2-5-6V2z" fill="#cfd8dc"/><path d="M4 3h8v5c0 3-4 5-4 5s-4-2-4-5V3z" fill="#8d6e63"/><circle cx="8" cy="7" r="1.5" fill="#37474f"/>'),
-  golden_apple: makeSvgIcon('<circle cx="8" cy="9" r="5.5" fill="#ffd600"/><circle cx="6.5" cy="7.5" r="1.5" fill="#fff9c4"/><path d="M8 2c1 0 1 2 0 3" stroke="#8d6e63" stroke-width="1.5" fill="none"/>'),
+  shield: makeSvgIcon(`
+    <path d="M2 1h12v7c0 4.5-6 7-6 7s-6-2.5-6-7V1z" fill="#5c3a21"/>
+    <path d="M3 2h10v6c0 3.8-5 5.8-5 5.8s-5-2-5-5.8V2z" fill="#8d6e63"/>
+    <path d="M4 3h8v5c0 3-4 4.5-4 4.5s-4-1.5-4-4.5V3z" fill="#d0d7de"/>
+    <rect x="7" y="5.5" width="2" height="2" fill="#57606a"/>
+  `),
 
   // 圓瓶藥水 (圓形燒瓶底、木塞、玻璃瓶頸與弧形液面)
   potion: makeSvgIcon(`
@@ -2142,12 +2225,12 @@ function bVM() {
               }
               break;
             case "MINIGUN_FIRE":
-  AE.play("minigun");
-  spawnMinigunTracer(msg.x, msg.y, msg.z, msg.dx, msg.dy, msg.dz, msg.hitDist);
-  if (remotePlayer) {
-    remotePlayer.minigunSpin = (remotePlayer.minigunSpin || 0) + 1.2;
-  }
-  break;
+              AE.play("minigun");
+              spawnMinigunTracer(msg.x, msg.y, msg.z, msg.dx, msg.dy, msg.dz, msg.hitDist);
+              if (remotePlayer) {
+                remotePlayer.minigunSpin = (remotePlayer.minigunSpin || 0) + 4.5; // 👈 改為 4.5
+              }
+              break;
             case "PING":
               this.send({ type: "PONG", time: msg.time });
               break;
@@ -4682,20 +4765,22 @@ if (!localPlayer.isDead) {
           // 🌟 物品 5：原版立體盾牌 3D 模型
           else if (id === "shield") {
             m = new THREE.Group();
-            const woodRimMat = new THREE.MeshLambertMaterial({ color: 0x8b5a2b });
-            const ironEdgeMat = new THREE.MeshLambertMaterial({ color: 0xd0d0d0 });
-            const shieldFaceMat = new THREE.MeshLambertMaterial({ color: 0xefefef });
-            const bossMat = new THREE.MeshLambertMaterial({ color: 0x606060 });
+            const outerWoodMat = new THREE.MeshLambertMaterial({ color: 0x6d4c41 }); // 外框深木色
+            const ironFaceMat = new THREE.MeshLambertMaterial({ color: 0xd4d8dc });  // 中間鐵面
+            const bossMat = new THREE.MeshLambertMaterial({ color: 0x474e56 });      // 中心金屬鉚釘
+            const handleMat = new THREE.MeshLambertMaterial({ color: 0x4a2e18 });    // 握把木色
 
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.68, 0.03), woodRimMat);
-            m.add(body);
-            const face = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.64, 0.035), shieldFaceMat);
-            m.add(face);
-            const ironRim = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.70, 0.02), ironEdgeMat);
-            m.add(ironRim);
+            // 外圈木質底板
+            const woodBase = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.70, 0.03), outerWoodMat);
+            m.add(woodBase);
+            // 中間鐵板面
+            const ironFace = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.62, 0.035), ironFaceMat);
+            m.add(ironFace);
+            // 正中央金屬鉚釘
             const boss = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.045), bossMat);
             m.add(boss);
-            const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, 0.04), woodRimMat);
+            // 背面握把
+            const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, 0.04), handleMat);
             handle.position.set(0, 0, 0.04);
             m.add(handle);
 
@@ -4706,7 +4791,7 @@ if (!localPlayer.isDead) {
               m.position.set(0, 0.15, 0.25);
               m.rotation.set(Math.PI / 4, 0, 0);
             }
-          } 
+          }
           // 🌟 物品 6：所有一般像素物品（劍、木棒、剪刀、金蘋果、火球、藥水、珍珠、礦物）
           else {
             let u, c = 0xffffff;
@@ -5996,11 +6081,12 @@ p.canFly = false;
       let heldItem = null;
 
       function getItemIcon(item) {
-  if (!item) return "";
-  if (item.id === "sword") return getSwordIcon(item.swordLevel !== undefined ? item.swordLevel : localPlayer.swordLevel);
-  if (item.id === "wool") return localPlayer.id === "emu" ? MA.blue_wool : MA.orange_wool;
-  if (item.id === "minigun") return MA.minigun;
-  if (item.id === "rpg") return MA.rpg;
+        if (!item) return "";
+        if (item.id === "sword") return getSwordIcon(item.swordLevel !== undefined ? item.swordLevel : localPlayer.swordLevel);
+        if (item.id === "wool") return localPlayer.id === "emu" ? MA.blue_wool : MA.orange_wool;
+        if (item.id === "minigun") return MA.minigun;
+        if (item.id === "rpg") return MA.rpg;
+        if (item.id === "shield") return MA.shield; // 👈 確保直接讀取盾牌圖示
         
         // 🌟 根據防具階級（Tier 1/2 鐵白銀色，Tier 3 鑽石青色）動態生成對應顏色圖示
         if (item.id && item.id.startsWith("armor_")) {
