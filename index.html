@@ -911,13 +911,11 @@ const SVG_ARMOR_EMPTY = makeHudArmorSvg(HUD_ARMOR_PIXEL_EMPTY, { "K": "#000000" 
 const MA = {
 // 🔫 Minigun 機槍圖示
   minigun: makeSvgIcon(`
-    <!-- 上提把 (Carry Handle) -->
     <rect x="4" y="2" width="4" height="1" fill="#3a3d45"/>
     <rect x="5" y="2" width="2" height="1" fill="#6c7380"/>
     <rect x="4" y="3" width="1" height="2" fill="#202227"/>
     <rect x="7" y="3" width="1" height="2" fill="#202227"/>
 
-    <!-- 主機匣與散熱孔 (Receiver Body) -->
     <rect x="2" y="4" width="5" height="1" fill="#2f323a"/>
     <rect x="2" y="5" width="5" height="5" fill="#22252a"/>
     <rect x="3" y="5" width="4" height="2" fill="#3d424c"/>
@@ -925,20 +923,17 @@ const MA = {
     <rect x="3" y="8" width="3" height="1" fill="#18191c"/>
     <rect x="6" y="6" width="1" height="3" fill="#141518"/>
 
-    <!-- 後方木質握把與板機 (Rear Grip) -->
     <rect x="0" y="7" width="2" height="1" fill="#2a1d15"/>
     <rect x="0" y="8" width="2" height="3" fill="#6d4c38"/>
     <rect x="0" y="9" width="1" height="2" fill="#8d6248"/>
     <rect x="1" y="11" width="1" height="1" fill="#3a2518"/>
     <rect x="2" y="8" width="1" height="1" fill="#1c1d20"/>
 
-    <!-- 底部驅動馬達 (Drive Motor) -->
     <rect x="3" y="10" width="4" height="2" fill="#1a1b1f"/>
     <rect x="3" y="10" width="1" height="2" fill="#2e3138"/>
     <rect x="5" y="10" width="1" height="2" fill="#2e3138"/>
     <rect x="4" y="12" width="2" height="1" fill="#141517"/>
 
-    <!-- 旋轉槍管組 (多層次金屬與高光陰影) -->
     <rect x="7" y="5" width="8" height="1" fill="#58606e"/>
     <rect x="7" y="5" width="6" height="1" fill="#757f91"/>
     <rect x="7" y="6" width="8" height="1" fill="#2d3036"/>
@@ -947,16 +942,12 @@ const MA = {
     <rect x="7" y="8" width="8" height="1" fill="#2d3036"/>
     <rect x="7" y="9" width="8" height="1" fill="#4d5460"/>
     <rect x="7" y="9" width="6" height="1" fill="#636c7c"/>
-
-    <!-- 槍管金屬束環 1 & 2 (Barrel Clamp Rings) -->
     <rect x="9" y="4" width="1" height="7" fill="#141518"/>
     <rect x="9" y="5" width="1" height="1" fill="#3d424b"/>
     <rect x="9" y="7" width="1" height="1" fill="#555c69"/>
     <rect x="12" y="4" width="1" height="7" fill="#141518"/>
     <rect x="12" y="5" width="1" height="1" fill="#3d424b"/>
     <rect x="12" y="7" width="1" height="1" fill="#555c69"/>
-
-    <!-- 前端槍口固定盤與槍膛孔 (Muzzle Plate & Openings) -->
     <rect x="15" y="4" width="1" height="7" fill="#141518"/>
     <rect x="15" y="5" width="1" height="1" fill="#0b0c0d"/>
     <rect x="15" y="7" width="1" height="1" fill="#0b0c0d"/>
@@ -965,40 +956,34 @@ const MA = {
 
   // 🚀 RPG-7 火箭筒圖示
   rpg: makeSvgIcon(`
-    <!-- 1. 後方擴散噴嘴與尾端口 (Exhaust Nozzle) -->
-    <rect x="0" y="6" width="1" height="5" fill="#14171a"/>
+       <rect x="0" y="6" width="1" height="5" fill="#14171a"/>
     <rect x="0" y="7" width="1" height="3" fill="#0b0d0e"/>
     <rect x="1" y="7" width="2" height="3" fill="#22262c"/>
     <rect x="1" y="7" width="2" height="1" fill="#3a4049"/>
 
-    <!-- 2. 中段原木/電木隔熱套筒 (Wood Heat Shield) -->
     <rect x="3" y="6" width="1" height="5" fill="#14171a"/>
     <rect x="4" y="7" width="3" height="3" fill="#8f4820"/>
     <rect x="4" y="7" width="3" height="1" fill="#b35d29"/>
     <rect x="4" y="9" width="3" height="1" fill="#5e2f15"/>
     <rect x="7" y="6" width="1" height="5" fill="#14171a"/>
 
-    <!-- 3. 上方 PGO-7V 光學瞄準鏡與鏡片 (Optical Sight) -->
     <rect x="4" y="4" width="3" height="2" fill="#22262c"/>
     <rect x="4" y="4" width="2" height="1" fill="#3d434d"/>
     <rect x="6" y="4" width="1" height="2" fill="#00838f"/>
     <rect x="6" y="4" width="1" height="1" fill="#4dd0e1"/>
     <rect x="5" y="6" width="1" height="1" fill="#14171a"/>
 
-    <!-- 4. 前後雙握把與板機 (Dual Grips & Trigger) -->
     <rect x="3" y="10" width="1" height="2" fill="#6d3719"/>
     <rect x="3" y="11" width="1" height="1" fill="#4a2511"/>
     <rect x="6" y="10" width="1" height="3" fill="#8f4820"/>
     <rect x="6" y="11" width="1" height="2" fill="#5e2f15"/>
     <rect x="7" y="10" width="1" height="1" fill="#14171a"/>
 
-    <!-- 5. 前段發射鋼管與槍口套環 (Front Launch Tube) -->
     <rect x="8" y="7" width="2" height="3" fill="#22262c"/>
     <rect x="8" y="7" width="2" height="1" fill="#3a4049"/>
     <rect x="10" y="6" width="1" height="5" fill="#14171a"/>
     <rect x="10" y="7" width="1" height="3" fill="#2a2e36"/>
 
-    <!-- 6. PG-7V 火箭彈頭與黃銅引信 (Rocket Warhead & Fuze) -->
     <rect x="11" y="8" width="1" height="1" fill="#14171a"/>
     <rect x="12" y="7" width="1" height="3" fill="#3b4728"/>
     <rect x="12" y="7" width="1" height="1" fill="#54653a"/>
