@@ -2398,6 +2398,14 @@ case "DOOR_BREAK":
               }
               uHUD();
               break;
+case "DEATH_DROPS_BATCH":
+  // 對方電腦收到整包清單後，在本地同時生成所有的掉落物
+  if (msg.drops && Array.isArray(msg.drops)) {
+    msg.drops.forEach((d) => {
+      sDrp(d.id, d.count, d.x, d.y, d.z, d.vx, d.vy, d.vz, false, d.dropId);
+    });
+  }
+  break;
 case "PLAYER_LEAVE":
               if (gameSessionStarted) {
                 alert("對手已離開遊戲！已返回大廳。");
@@ -3969,17 +3977,47 @@ else if (id === "golden_apple") u = MA.golden_apple;
 
       function hDD(p) {
   if (!p.inventory) return;
-  // 🌟 定義死亡不掉落的物品（劍與管理員專屬裝備）
   const keepItems = ["sword", "minigun", "rpg", "shield"];
+  const dropsBatch = []; // 📦 用來打包所有掉落物
 
   for (let i = 0; i < 36; i++) {
     const it = p.inventory[i];
-    if (it && !keepItems.includes(it.id)) { // 保留物品不噴出，其他一般資源噴出
-      for (let c = 0; c < it.count; c++) {
-        sDrp(it.id, 1, p.x, p.y + 1.0, p.z, (Math.random() - 0.5) * 0.25, 0.2, (Math.random() - 0.5) * 0.25, true);
-      }
+    if (it && !keepItems.includes(it.id)) {
+      // 為每個物品堆疊生成唯一 ID 與隨機散落初速度
+      const dropId = "drop-" + Math.floor(Math.random() * 1000000);
+      const vx = (Math.random() - 0.5) * 0.25;
+      const vy = 0.2 + Math.random() * 0.1;
+      const vz = (Math.random() - 0.5) * 0.25;
+
+      dropsBatch.push({
+        dropId: dropId,
+        id: it.id,
+        count: it.count,
+        x: p.x,
+        y: p.y + 1.0,
+        z: p.z,
+        vx: vx,
+        vy: vy,
+        vz: vz
+      });
+
+      // 本地直接生成 3D 實體（不單獨廣播）
+      sDrp(it.id, it.count, p.x, p.y + 1.0, p.z, vx, vy, vz, false, dropId);
       p.inventory[i] = null;
     }
+  }
+
+  // 🌟 核心：一次性將整包清單發送給對方（1 個封包解決所有掉落物！）
+  if (dropsBatch.length > 0) {
+    NetManager.send({
+      type: "DEATH_DROPS_BATCH",
+      drops: dropsBatch
+    }, 1);
+  }
+// 在 hDD 函式的最末端加上這兩行：
+  if (p === localPlayer) {
+    renderInventoryUI();
+    uPHI(p);
   }
 }
 
