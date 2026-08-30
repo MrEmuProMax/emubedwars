@@ -546,7 +546,7 @@ let isChatOpen = false;
           sender: localPlayer.id === "emu" ? "藍隊" : "橘隊",
           text: text,
           teamColor: myColor
-        });
+        }, 1);
       }
 
       // 🌟 控制聊天框（支援 T 鍵完全無介面隱形輸入）
@@ -559,6 +559,7 @@ let isChatOpen = false;
         isStealthChat = stealth;
 
         if (open) {
+          for (let k in ky) ky[k] = false; // 🌟 打開聊天框時立即清空按鍵狀態，避免卡鍵
           wrapper.classList.remove("hidden");
           if (stealth) {
             // 🌟 隱形模式：透明度設為 0，畫面上 100% 看不到任何東西
@@ -1992,24 +1993,30 @@ function bVM() {
       }
 
       const NetManager = {
-        connect(roomId, onConnected = null) {
-          if (mqttClient) {
-            try { mqttClient.end(true); } catch (e) {}
-          }
+  connect(roomId, onConnected = null) {
+    if (mqttClient) {
+      try { mqttClient.end(true); } catch (e) {}
+    }
 
-          currentRoomId = roomId;
-          currentRoomTopic = MQTT_TOPIC_PREFIX + roomId;
+    currentRoomId = roomId;
+    currentRoomTopic = MQTT_TOPIC_PREFIX + roomId;
 
-          mqttClient = mqtt.connect(MQTT_BROKER, {
-            clientId: myClientId,
-            clean: true,
-            connectTimeout: 5000,
-            reconnectPeriod: 2000
-          });
+    mqttClient = mqtt.connect(MQTT_BROKER, {
+      clientId: myClientId,
+      clean: true,
+      connectTimeout: 5000,
+      reconnectPeriod: 2000,
+      will: {
+        topic: MQTT_TOPIC_PREFIX + roomId,
+        payload: JSON.stringify({ type: "PLAYER_LEAVE", _sender: myClientId }),
+        qos: 1,
+        retain: false
+      }
+    });
 
           mqttClient.on("connect", () => {
             document.getElementById("conn-status").innerText = `狀態: 已連線至 Broker，訂閱房號: ${roomId}`;
-            mqttClient.subscribe(currentRoomTopic, { qos: 0 }, (err) => {
+            mqttClient.subscribe(currentRoomTopic, { qos: 1 }, (err) => {
               if (err) {
                 alert("⚠️ 訂閱房間失敗，請重試！");
                 return;
@@ -2043,17 +2050,17 @@ function bVM() {
           });
         },
 
-        send(data) {
+        send(data, qos = 0) { // 👈 加上 qos 參數（預設 0）
           if (!mqttClient || !mqttClient.connected || !currentRoomTopic) return;
           try {
             data._sender = myClientId;
-            mqttClient.publish(currentRoomTopic, JSON.stringify(data), { qos: 0 });
+            mqttClient.publish(currentRoomTopic, JSON.stringify(data), { qos: qos });
           } catch (e) {}
         },
 
         handleMessage(msg) {
-          if (!msg) return;
-          switch (msg.type) {
+  if (!msg) return;
+            switch (msg.type) {
             case "PLAYER_DEATH":
               if (remotePlayer && !remotePlayer.isDead) {
                 remotePlayer.isDead = true;
@@ -2085,7 +2092,8 @@ function bVM() {
               AE.play("tnt_explode");
               break;
             case "DAMAGE_TAKEN":
-              if (localPlayer.activeSlot === 17 && localPlayer.hasShield) {
+              const curHeldShield = localPlayer.inventory ? localPlayer.inventory[localPlayer.activeSlot] : null;
+              if (curHeldShield && curHeldShield.id === "shield") {
                 AE.play("hit");
                 return;
               }
@@ -2138,6 +2146,8 @@ function bVM() {
               remotePlayer.vz = msg.vz;
               remotePlayer.isSneaking = msg.isSneaking;
               remotePlayer.activeSlot = msg.activeSlot;
+              if (!remotePlayer.inventory) remotePlayer.inventory = new Array(36).fill(null);
+              remotePlayer.inventory[msg.activeSlot] = msg.heldItemId ? { id: msg.heldItemId, count: 1, swordLevel: msg.heldSwordLevel } : null;
               remotePlayer.swordLevel = msg.swordLevel;
               remotePlayer.armorLevel = msg.armorLevel;
               remotePlayer.hasShield = msg.hasShield;
@@ -2182,6 +2192,13 @@ function bVM() {
               if (!msg.isExplosion) {
                 cBP(msg.x + 0.5, msg.y + 0.5, msg.z + 0.5, 0x8d6e63);
               }
+              break;
+case "DOOR_BREAK":
+              sB(msg.x, msg.botY, msg.z, 0);
+              sB(msg.x, msg.topY, msg.z, 0);
+              bVM();
+              AE.play("dig");
+              cBP(msg.x + 0.5, msg.botY + 0.5, msg.z + 0.5, 0x8d6e63);
               break;
             case "DOOR_TOGGLE":
               sB(msg.x, msg.botY, msg.z, msg.botVal);
@@ -2853,7 +2870,26 @@ if (e.code === "Enter") {
       }
 
       function pTk(p) {
-        if (p.isDead) return;
+  // 🌟 死亡時不跑物理運算，但依然發送狀態維持 20Hz 心跳（防止 3 秒超時誤判）
+  if (p.isDead) {
+    NetManager.send({
+      type: "PLAYER_STATE",
+      x: p.x, y: p.y, z: p.z,
+      vx: 0, vy: 0, vz: 0,
+      yaw: p.yaw, pitch: p.pitch,
+      isSneaking: false,
+      activeSlot: p.activeSlot,
+      swordLevel: p.swordLevel,
+      armorLevel: p.armorLevel,
+      hasShield: p.hasShield,
+      isSwinging: false,
+      activeEmotion: null,
+      invisTimer: 0,
+      hp: 0,
+      isDead: true
+    });
+    return;
+  }
 
         // 🌟 飛行時強制不進入潛行狀態（不變矮、不降速、不觸發潛行），只在非飛行時由 C 鍵控制
         if (p.isFlying) {
@@ -2974,12 +3010,25 @@ if (e.code === "Enter") {
           if (p.y > p.highestY) p.highestY = p.y;
         }
 
-        if (p.y < -12) aDmg(p, 100);
+        if (p.y < -12) {
+          const held = p.inventory ? p.inventory[p.activeSlot] : null;
+          if (held && held.id === "shield") {
+            // 🌟 手持盾牌掉入虛空：給予向上噴射的大衝量（飛越空島至高處約 24 格，重複彈跳）
+            p.vy = 1.45;
+            p.y = -11.8;
+            p.vx *= 0.8;
+            p.vz *= 0.8;
+            AE.play("jump");
+          } else {
+            aDmg(p, 1000);
+          }
+        }
 
         if (p.actionCooldown > 0) p.actionCooldown--;
         if (p.gappleCooldownTimer > 0) p.gappleCooldownTimer = Math.max(0, p.gappleCooldownTimer - 0.05);
 
         // 同步狀態至對手
+        const heldNow = p.inventory ? p.inventory[p.activeSlot] : null;
         NetManager.send({
           type: "PLAYER_STATE",
           x: p.x,
@@ -2992,13 +3041,15 @@ if (e.code === "Enter") {
           pitch: p.pitch,
           isSneaking: p.isSneaking,
           activeSlot: p.activeSlot,
+          heldItemId: heldNow ? heldNow.id : null,
+          heldSwordLevel: (heldNow && heldNow.id === "sword") ? (heldNow.swordLevel || 0) : p.swordLevel,
           swordLevel: p.swordLevel,
           armorLevel: p.armorLevel,
-hasShield: p.hasShield, // 👈 加這行
+          hasShield: p.hasShield,
           isSwinging: p.isSwinging,
           activeEmotion: p.activeEmotion,
           invisTimer: p.invisTimer,
-hp: p.hp, // 🌟 新增：每幀同步自己的真實血量給對手！
+          hp: p.hp,
           isDead: p.isDead,
         });
       }
@@ -3064,189 +3115,6 @@ hp: p.hp, // 🌟 新增：每幀同步自己的真實血量給對手！
         const isFull = p.teamTraps.length >= 3;
         const currentCost = isFull ? 0 : costScale[p.teamTraps.length];
         return trapList.map((t) => ({ ...t, cost: currentCost, isFull: isFull }));
-      }
-
-      function bHB() {
-        const ct = document.getElementById("hotbar-slots");
-        ct.innerHTML = "";
-        const wi = localPlayer.id === "emu" ? MA.blue_wool : MA.orange_wool;
-        const items = [
-          { id: "sword", icon: getSwordIcon(localPlayer.swordLevel), locked: false, isCount: false },
-          { id: "wool", icon: wi, locked: true, isCount: true, ref: "woolCount" },
-          { id: "shears", icon: MA.shears, locked: true, isCount: false },
-          { id: "stick", icon: MA.stick, locked: true, isCount: false, enchant: true },
-          { id: "golden_apple", icon: MA.golden_apple, locked: true, isCount: true, ref: "golden_appleCount" },
-          { id: "emerald", icon: MA.emerald, locked: true, isCount: true, ref: "emeraldCount" },
-          { id: "diamond", icon: MA.diamond, locked: true, isCount: true, ref: "diamondCount" },
-          { id: "iron", icon: MA.iron, locked: true, isCount: true, ref: "ironCount" },
-          { id: "coal", icon: MA.coal, locked: true, isCount: true, ref: "coalCount" },
-          { id: "tnt", icon: MA.tnt, locked: true, isCount: true, ref: "tntCount" },
-          { id: "fireball", icon: MA.fireball, locked: true, isCount: true, ref: "fireballCount" },
-          { id: "invis_potion", icon: MA.potion, locked: true, isCount: true, ref: "invis_potionCount", filter: "hue-rotate(280deg) saturate(1.5)" },
-          { id: "jump_potion", icon: MA.potion, locked: true, isCount: true, ref: "jump_potionCount", filter: "hue-rotate(50deg) saturate(2) brightness(1.2)" },
-          { id: "speed_potion", icon: MA.potion, locked: true, isCount: true, ref: "speed_potionCount", filter: "hue-rotate(200deg) saturate(2)" },
-          { id: "ender_pearl", icon: MA.ender_pearl, locked: true, isCount: true, ref: "ender_pearlCount" },
-          { id: "minigun", icon: MA.iron_sword, locked: true, isCount: false, customEmoji: "🔫" },
-          { id: "rpg", icon: MA.fireball, locked: true, isCount: false, customEmoji: "🚀" },
-{ id: "shield", icon: MA.shield, locked: true, isCount: false, customEmoji: "🛡️" },
-        ];
-
-        items.forEach((it, idx) => {
-          let es = it.enchant ? "filter: drop-shadow(0px 0px 4px #4a148c) hue-rotate(45deg);" : "";
-          if (it.filter) es = `filter: ${it.filter};`;
-          ct.innerHTML += `
-            <div id="slot-${idx}" class="${it.locked ? "hidden" : "flex"} w-10 h-10 items-center justify-center relative mc-slot transition-all duration-75">
-              <div id="icon-${idx}">${it.customEmoji ? `<span class="text-xl">${it.customEmoji}</span>` : `<img src="${it.icon}" class="w-8 h-8 object-contain select-none" style="image-rendering: pixelated; ${es}" />`}</div>
-              ${idx === 4 ? `<div id="slot-cooldown" class="absolute inset-0 bg-black/60 flex items-center justify-center text-[10px] text-red-400 font-bold hidden"></div>` : ""}
-              ${it.isCount ? `<div id="count-${idx}" class="absolute bottom-0.5 right-1 text-[11px] text-white font-bold drop-shadow-[1px_1px_0_#000]">0</div>` : ""}
-            </div>
-          `;
-        });
-      }
-
-      function uHS(ai) {
-        for (let i = 0; i < 18; i++) {
-          const s = document.getElementById(`slot-${i}`);
-          if (s) {
-            s.classList.remove("active");
-            if (i === ai) s.classList.add("active");
-          }
-        }
-      }
-
-      function selectSlotDirectly(p, targetSlotIndex) {
-        const availableSlots = [0];
-        if (p.res.woolCount > 0) availableSlots.push(1);
-        if (p.hasShears) availableSlots.push(2);
-        if (p.hasStick) availableSlots.push(3);
-        if (p.res.golden_appleCount > 0) availableSlots.push(4);
-        if (p.res.emeraldCount > 0) availableSlots.push(5);
-        if (p.res.diamondCount > 0) availableSlots.push(6);
-        if (p.res.ironCount > 0) availableSlots.push(7);
-        if (p.res.coalCount > 0) availableSlots.push(8);
-        if (p.res.tntCount > 0) availableSlots.push(9);
-        if (p.res.fireballCount > 0) availableSlots.push(10);
-        if (p.res.invis_potionCount > 0) availableSlots.push(11);
-        if (p.res.jump_potionCount > 0) availableSlots.push(12);
-        if (p.res.speed_potionCount > 0) availableSlots.push(13);
-        if (p.res.ender_pearlCount > 0) availableSlots.push(14);
-        if (p.hasMinigun) availableSlots.push(15);
-        if (p.hasRPG) availableSlots.push(16);
-if (p.hasShield) availableSlots.push(17);
-
-        if (targetSlotIndex < availableSlots.length) {
-          p.activeSlot = availableSlots[targetSlotIndex];
-          uHS(p.activeSlot);
-          uPHI(p);
-        }
-      }
-
-      function cycleSlot(p, dir) {
-        const av = [0];
-        if (p.res.woolCount > 0) av.push(1);
-        if (p.hasShears) av.push(2);
-        if (p.hasStick) av.push(3);
-        if (p.res.golden_appleCount > 0) av.push(4);
-        if (p.res.emeraldCount > 0) av.push(5);
-        if (p.res.diamondCount > 0) av.push(6);
-        if (p.res.ironCount > 0) av.push(7);
-        if (p.res.coalCount > 0) av.push(8);
-        if (p.res.tntCount > 0) av.push(9);
-        if (p.res.fireballCount > 0) av.push(10);
-        if (p.res.invis_potionCount > 0) av.push(11);
-        if (p.res.jump_potionCount > 0) av.push(12);
-        if (p.res.speed_potionCount > 0) av.push(13);
-        if (p.res.ender_pearlCount > 0) av.push(14);
-        if (p.hasMinigun) av.push(15);
-        if (p.hasRPG) av.push(16);
-        if (p.hasShield) av.push(17); // 👈 只要補上這一行，滾輪切換就完全正常了！
-
-        let ci = av.indexOf(p.activeSlot);
-        if (ci === -1) ci = 0;
-        ci = (ci + dir + av.length) % av.length;
-        p.activeSlot = av[ci];
-        uHS(p.activeSlot);
-        uPHI(p);
-      }
-
-      function uRUI(p) {
-        if (p !== localPlayer) return; // 🌟 加上這行：防止對手死亡時清空你的物品欄！
-        const sic = document.getElementById("icon-0");
-        if (sic) sic.innerHTML = `<img src="${getSwordIcon(p.swordLevel)}" class="w-8 h-8 object-contain select-none" style="image-rendering: pixelated;" />`;
-
-        const s2 = document.getElementById("slot-2");
-        if (s2) p.hasShears ? (s2.classList.remove("hidden"), s2.classList.add("flex")) : (s2.classList.add("hidden"), s2.classList.remove("flex"));
-
-        const s3 = document.getElementById("slot-3");
-        if (s3) p.hasStick ? (s3.classList.remove("hidden"), s3.classList.add("flex")) : (s3.classList.add("hidden"), s3.classList.remove("flex"));
-
-        const s1 = document.getElementById("slot-1");
-        const wl = document.getElementById("count-1");
-        if (s1 && wl) {
-          if (p.res.woolCount > 0) {
-            s1.classList.remove("hidden");
-            s1.classList.add("flex");
-            wl.innerText = p.res.woolCount;
-          } else {
-            s1.classList.add("hidden");
-            s1.classList.remove("flex");
-            if (p.activeSlot === 1) cycleSlot(p, 1);
-          }
-        }
-
-        const s4 = document.getElementById("slot-4");
-        const al = document.getElementById("count-4");
-        if (s4 && al) {
-          if (p.res.golden_appleCount > 0) {
-            s4.classList.remove("hidden");
-            s4.classList.add("flex");
-            al.innerText = p.res.golden_appleCount;
-          } else {
-            s4.classList.add("hidden");
-            s4.classList.remove("flex");
-            if (p.activeSlot === 4) cycleSlot(p, 1);
-          }
-        }
-
-        const rm = {
-          5: "emeraldCount",
-          6: "diamondCount",
-          7: "ironCount",
-          8: "coalCount",
-          9: "tntCount",
-          10: "fireballCount",
-          11: "invis_potionCount",
-          12: "jump_potionCount",
-          13: "speed_potionCount",
-          14: "ender_pearlCount",
-        };
-        for (let i = 5; i <= 14; i++) {
-          const s = document.getElementById(`slot-${i}`);
-          const cl = document.getElementById(`count-${i}`);
-          if (s && cl) {
-            const cnt = p.res[rm[i]];
-            if (cnt > 0) {
-              s.classList.remove("hidden");
-              s.classList.add("flex");
-              cl.innerText = cnt;
-            } else {
-              s.classList.add("hidden");
-              s.classList.remove("flex");
-              if (p.activeSlot === i) cycleSlot(p, 1);
-            }
-          }
-        }
-const s15 = document.getElementById("slot-15");
-        if (s15) p.hasMinigun ? (s15.classList.remove("hidden"), s15.classList.add("flex")) : (s15.classList.add("hidden"), s15.classList.remove("flex"));
-
-        const s16 = document.getElementById("slot-16");
-        if (s16) p.hasRPG ? (s16.classList.remove("hidden"), s16.classList.add("flex")) : (s16.classList.add("hidden"), s16.classList.remove("flex"));
-
-        // 🌟 補上這兩行：更新 17 號盾牌格子的顯示狀態
-        const s17 = document.getElementById("slot-17");
-        if (s17) p.hasShield ? (s17.classList.remove("hidden"), s17.classList.add("flex")) : (s17.classList.add("hidden"), s17.classList.remove("flex"));
-
-        rS();
       }
 
       window.switchShopTab = function (tab) {
@@ -3700,7 +3568,7 @@ const kbs = held && held.id === "stick" ? 31.5 : 10.5;
       P1.bedAlive = false;
       AE.play("bed_break");
       cBP(65.5, 13.3, 24.5, 0x2962ff);
-      NetManager.send({ type: "BED_DESTROY", team: "emu" });
+      NetManager.send({ type: "BED_DESTROY", team: "emu" }, 1);
       uHUD();
     } else if (bt === 11 || bt === 21) {
       sB(65, 13, 105, 0);
@@ -3708,7 +3576,7 @@ const kbs = held && held.id === "stick" ? 31.5 : 10.5;
       P2.bedAlive = false;
       AE.play("bed_break");
       cBP(65.5, 13.3, 105.5, 0xff6d00);
-      NetManager.send({ type: "BED_DESTROY", team: "wombat" });
+      NetManager.send({ type: "BED_DESTROY", team: "wombat" }, 1);
       uHUD();
     } else if (bt >= 16 && bt <= 19) {
       const isTop = bt === 18 || bt === 19;
@@ -3718,8 +3586,7 @@ const kbs = held && held.id === "stick" ? 31.5 : 10.5;
       sB(tg.x, topY, tg.z, 0);
       AE.play("dig");
       cBP(tg.x + 0.5, tg.y + 0.5, tg.z + 0.5, 0x8d6e63);
-      NetManager.send({ type: "BLOCK_BREAK", x: tg.x, y: botY, z: tg.z });
-      NetManager.send({ type: "BLOCK_BREAK", x: tg.x, y: topY, z: tg.z });
+      NetManager.send({ type: "DOOR_BREAK", x: tg.x, botY: botY, topY: topY, z: tg.z });
     } else {
       sB(tg.x, tg.y, tg.z, 0);
       AE.play("dig");
@@ -4479,7 +4346,7 @@ if (!localPlayer.isDead) {
             const avatar = v === P1 ? "🐻" : "🪶";
             const desc = "粉碎了對手核心並完成了最終擊殺，主宰了虛空！";
             eGm(winnerName, avatar, desc);
-            NetManager.send({ type: "GAME_OVER", winnerTeam: winnerName, avatar: avatar, desc: desc });
+            NetManager.send({ type: "GAME_OVER", winnerTeam: winnerName, avatar: avatar, desc: desc }, 1);
           }
         }
       }
@@ -5716,9 +5583,10 @@ if (remotePlayer && remotePlayer.iFrameTimer > 0) {
 
         if (localPlayer.isSwinging && localPlayer.swingTimer >= 0.08 && localPlayer.swingTimer < 0.16 && !localPlayer.hasDealtDamageThisSwing) {
           // 🌟 Minigun(15) 與 RPG(16) 以外的任何物品/空手都能進行近戰攻擊
-          if (localPlayer.activeSlot !== 15 && localPlayer.activeSlot !== 16) {
-            checkMeleeHit();
-          }
+          const held = localPlayer.inventory ? localPlayer.inventory[localPlayer.activeSlot] : null;
+if (!held || (held.id !== "minigun" && held.id !== "rpg")) {
+  checkMeleeHit();
+}
         }
 
         handleContinuousMining(dt);
@@ -6099,6 +5967,20 @@ function resetPlayerAllData(p) {
         if (!item) return "";
         if (item.id === "sword") return getSwordIcon(item.swordLevel !== undefined ? item.swordLevel : localPlayer.swordLevel);
         if (item.id === "wool") return localPlayer.id === "emu" ? MA.blue_wool : MA.orange_wool;
+        
+        // 🌟 根據防具階級（Tier 1/2 鐵白銀色，Tier 3 鑽石青色）動態生成對應顏色圖示
+        if (item.id && item.id.startsWith("armor_")) {
+          const tier = item.tier !== undefined ? item.tier : localPlayer.armorLevel;
+          const palette = (tier === 1 || tier === 2) ? IRON_ARMOR_PALETTE : DIAMOND_ARMOR_PALETTE;
+          const map = {
+            "armor_helmet": PIXEL_MAP_HELMET,
+            "armor_chest":  PIXEL_MAP_CHESTPLATE,
+            "armor_legs":   PIXEL_MAP_LEGGINGS,
+            "armor_boots":  PIXEL_MAP_BOOTS
+          }[item.id];
+          if (map) return makePixelArmorSvg(map, palette);
+        }
+
         return MA[item.id] || MA.iron;
       }
 
@@ -6351,12 +6233,17 @@ function resetPlayerAllData(p) {
         } else {
           modal.classList.add("hidden");
           if (heldItem) {
+            let placed = false;
             for (let i = 0; i < 36; i++) {
               if (!localPlayer.inventory[i]) {
                 localPlayer.inventory[i] = heldItem;
-                heldItem = null;
+                placed = true;
                 break;
               }
+            }
+            if (!placed) {
+              // 背包全滿放不下時，自動以掉落物噴出在玩家腳下
+              sDrp(heldItem.id, heldItem.count, localPlayer.x, localPlayer.y + 0.5, localPlayer.z, 0, 0.2, 0, true);
             }
             heldItem = null;
             updateFloatingDragItem();
@@ -6520,11 +6407,11 @@ window.onload = function () {
 
   // 關閉或重新整理網頁時通知對手並釋放連線
   window.addEventListener("beforeunload", () => {
-    if (mqttClient && mqttClient.connected) {
-      NetManager.send({ type: "PLAYER_LEAVE" });
-      try { mqttClient.end(true); } catch (e) {}
-    }
-  });
+  if (mqttClient && mqttClient.connected) {
+    NetManager.send({ type: "PLAYER_LEAVE" }, 1);
+    // 不主動呼叫 end(true)，讓 Broker 在 WebSocket 斷開時觸發 will 或處理最後封包
+  }
+});
 };
     </script>
   </body>
