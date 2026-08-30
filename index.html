@@ -6181,66 +6181,56 @@ p.canFly = false;
         for (let i = 0; i < emptyCount; i++) html += `<img src="${SVG_ARMOR_EMPTY}" class="w-[16px] h-[16px] mx-[0.5px] select-none opacity-30" />`;
         ct.innerHTML = html;
       }
-// 🌟 將物品加入玩家背包（優先堆疊，再找空格）
-      function addItemToInventory(p, itemId, count = 1, extra = {}) {
-        // 1. 嘗試堆疊 (可堆疊上限 64，劍/剪刀/木棒/槍/盾不可堆疊)
-        const unstackable = ["sword", "shears", "stick", "minigun", "rpg", "shield"];
-        if (!unstackable.includes(itemId)) {
-          for (let i = 0; i < 36; i++) {
-            if (p.inventory[i] && p.inventory[i].id === itemId && p.inventory[i].count < 64) {
-              const add = Math.min(64 - p.inventory[i].count, count);
-              p.inventory[i].count += add;
-              count -= add;
-              if (count <= 0) break;
-            }
-          }
-        }
-        // 2. 剩餘數量放入第一個空格 (優先快捷欄 0~8，再主背包 9~35)
-        if (count > 0) {
-          for (let i = 0; i < 36; i++) {
-            if (!p.inventory[i]) {
-              p.inventory[i] = { id: itemId, count: count, ...extra };
-              count = 0;
-              break;
-            }
-          }
-        }
-        if (p === localPlayer) {
-          renderInventoryUI();
-          uPHI(p);
-        }
-        return count === 0;
-      }
+const MAX_STACK = 64; // 定義全域堆疊上限
+const UNSTACKABLE_ITEMS = ["sword", "shears", "stick", "minigun", "rpg", "shield"];
 
-      // 計算背包內某物品總數
-      function countItemInInventory(p, itemId) {
-        let total = 0;
-        for (let i = 0; i < 36; i++) {
-          if (p.inventory[i] && p.inventory[i].id === itemId) total += p.inventory[i].count;
-        }
-        return total;
-      }
+function isItemStackable(id) {
+  if (!id) return false;
+  if (UNSTACKABLE_ITEMS.includes(id)) return false;
+  if (id.startsWith("armor_")) return false; // 包含頭盔、胸甲等防具
+  return true;
+}
 
-      // 從背包扣除指定數量的物品
-      function deductItemFromInventory(p, itemId, amount) {
-        for (let i = 0; i < 36; i++) {
-          if (p.inventory[i] && p.inventory[i].id === itemId) {
-            if (p.inventory[i].count > amount) {
-              p.inventory[i].count -= amount;
-              amount = 0;
-              break;
-            } else {
-              amount -= p.inventory[i].count;
-              p.inventory[i] = null;
-              if (amount <= 0) break;
-            }
-          }
-        }
-        if (p === localPlayer) {
-          renderInventoryUI();
-          uPHI(p);
-        }
+function addItemToInventory(p, itemId, count = 1, extra = {}) {
+  const isStackable = isItemStackable(itemId);
+
+  // 1. 若可堆疊，先搜尋已有同類物品且「count < 64」的格子補滿
+  if (isStackable) {
+    for (let i = 0; i < 36; i++) {
+      if (p.inventory[i] && p.inventory[i].id === itemId && p.inventory[i].count < MAX_STACK) {
+        const canAdd = MAX_STACK - p.inventory[i].count;
+        const add = Math.min(canAdd, count);
+        p.inventory[i].count += add;
+        count -= add;
+        if (count <= 0) break;
       }
+    }
+  }
+
+  // 2. 還有剩餘數量（或不可堆疊物品），尋找空格分批放入
+  while (count > 0) {
+    let emptySlot = -1;
+    for (let i = 0; i < 36; i++) {
+      if (!p.inventory[i]) {
+        emptySlot = i;
+        break;
+      }
+    }
+
+    if (emptySlot === -1) break; // 背包全滿
+
+    const putCount = isStackable ? Math.min(MAX_STACK, count) : 1;
+    p.inventory[emptySlot] = { id: itemId, count: putCount, ...extra };
+    count -= putCount;
+  }
+
+  if (p === localPlayer) {
+    renderInventoryUI();
+    uPHI(p);
+  }
+
+  return count === 0;
+}
       function renderInventoryUI() {
         const p = localPlayer;
         // 1. 裝備欄 4 格 (36~39)
@@ -6300,80 +6290,100 @@ p.canFly = false;
 
       // 🌟 點擊格子處理（左鍵拿起/放下/對調/堆疊，支援 Shift 快速轉移）
       window.handleSlotClick = function(index) {
-        const p = localPlayer;
-        const isArmor = index >= 36 && index <= 39;
-        const currentItem = isArmor ? p.armorSlots[index - 36] : p.inventory[index];
-        const isShift = window.event && window.event.shiftKey;
+  const p = localPlayer;
+  const isArmor = index >= 36 && index <= 39;
+  const currentItem = isArmor ? p.armorSlots[index - 36] : p.inventory[index];
+  const isShift = window.event && window.event.shiftKey;
 
-        // 🌟 支援 Shift + 點擊快速轉移
-        if (isShift && currentItem && !heldItem) {
-          const armorMap = { "armor_helmet": 0, "armor_chest": 1, "armor_legs": 2, "armor_boots": 3 };
-          if (armorMap[currentItem.id] !== undefined && !isArmor) {
-            // 是防具且裝備欄是空的，自動穿上
-            const aIdx = armorMap[currentItem.id];
-            if (!p.armorSlots[aIdx]) {
-              p.armorSlots[aIdx] = currentItem;
-              p.inventory[index] = null;
-              renderInventoryUI();
-              uPHI(p);
-              return;
-            }
-          }
-          if (index >= 0 && index <= 8) {
-            // 從快捷欄 (0~8) 移到 主背包 (9~35)
-            for (let i = 9; i < 36; i++) {
-              if (!p.inventory[i]) { p.inventory[i] = currentItem; p.inventory[index] = null; break; }
-            }
-          } else if (index >= 9 && index <= 35) {
-            // 從主背包 (9~35) 移到 快捷欄 (0~8)
-            for (let i = 0; i < 9; i++) {
-              if (!p.inventory[i]) { p.inventory[i] = currentItem; p.inventory[index] = null; break; }
-            }
-          } else if (isArmor) {
-            // 脫下防具回到背包
-            for (let i = 0; i < 36; i++) {
-              if (!p.inventory[i]) { p.inventory[i] = currentItem; p.armorSlots[index - 36] = null; break; }
-            }
-          }
-          renderInventoryUI();
-          uPHI(p);
-          return;
-        }
-
-        // 常規拿起 / 放下 / 對調邏輯
-        if (heldItem && isArmor) {
-          const allowed = ["armor_helmet", "armor_chest", "armor_legs", "armor_boots"];
-          if (heldItem.id !== allowed[index - 36]) return; // 部位不符合無法放入
-        }
-
-        if (heldItem === null) {
-          if (currentItem) {
-            heldItem = currentItem;
-            if (isArmor) p.armorSlots[index - 36] = null;
-            else p.inventory[index] = null;
-          }
-        } else {
-          if (currentItem === null) {
-            if (isArmor) p.armorSlots[index - 36] = heldItem;
-            else p.inventory[index] = heldItem;
-            heldItem = null;
-          } else if (currentItem.id === heldItem.id && currentItem.count < 64) {
-            const add = Math.min(64 - currentItem.count, heldItem.count);
-            currentItem.count += add;
-            heldItem.count -= add;
-            if (heldItem.count <= 0) heldItem = null;
-          } else {
-            if (!isArmor) {
-              const temp = p.inventory[index];
-              p.inventory[index] = heldItem;
-              heldItem = temp;
-            }
-          }
-        }
-        updateFloatingDragItem();
+  // 🌟 1. Shift + 點擊快速轉移（支援合併堆疊到 64）
+  if (isShift && currentItem && !heldItem) {
+    const armorMap = { "armor_helmet": 0, "armor_chest": 1, "armor_legs": 2, "armor_boots": 3 };
+    if (armorMap[currentItem.id] !== undefined && !isArmor) {
+      const aIdx = armorMap[currentItem.id];
+      if (!p.armorSlots[aIdx]) {
+        p.armorSlots[aIdx] = currentItem;
+        p.inventory[index] = null;
         renderInventoryUI();
         uPHI(p);
-      };
+        return;
+      }
+    }
+
+    const startIdx = (index >= 0 && index <= 8) ? 9 : 0;
+    const endIdx = (index >= 0 && index <= 8) ? 36 : (isArmor ? 36 : 9);
+    
+    // 先嘗試堆疊進現有未滿 64 的格子
+    if (isItemStackable(currentItem.id)) {
+      for (let i = startIdx; i < endIdx; i++) {
+        if (p.inventory[i] && p.inventory[i].id === currentItem.id && p.inventory[i].count < MAX_STACK) {
+          const canAdd = MAX_STACK - p.inventory[i].count;
+          const add = Math.min(canAdd, currentItem.count);
+          p.inventory[i].count += add;
+          currentItem.count -= add;
+          if (currentItem.count <= 0) break;
+        }
+      }
+    }
+
+    // 若還有剩餘，放入空格
+    if (currentItem.count > 0) {
+      for (let i = startIdx; i < endIdx; i++) {
+        if (!p.inventory[i]) {
+          p.inventory[i] = currentItem;
+          currentItem.count = 0;
+          break;
+        }
+      }
+    }
+
+    if (currentItem.count <= 0) {
+      if (isArmor) p.armorSlots[index - 36] = null;
+      else p.inventory[index] = null;
+    }
+
+    renderInventoryUI();
+    uPHI(p);
+    return;
+  }
+
+  // 🌟 2. 裝備欄限制防呆
+  if (heldItem && isArmor) {
+    const allowed = ["armor_helmet", "armor_chest", "armor_legs", "armor_boots"];
+    if (heldItem.id !== allowed[index - 36]) return;
+  }
+
+  // 🌟 3. 游標拿起、放下與堆疊判斷
+  if (heldItem === null) {
+    if (currentItem) {
+      heldItem = currentItem;
+      if (isArmor) p.armorSlots[index - 36] = null;
+      else p.inventory[index] = null;
+    }
+  } else {
+    if (currentItem === null) {
+      if (isArmor) p.armorSlots[index - 36] = heldItem;
+      else p.inventory[index] = heldItem;
+      heldItem = null;
+    } 
+    // 關鍵修復：必須加上 isItemStackable，防止劍、盾牌、盔甲被合併！
+    else if (currentItem.id === heldItem.id && isItemStackable(currentItem.id) && currentItem.count < MAX_STACK) {
+      const add = Math.min(MAX_STACK - currentItem.count, heldItem.count);
+      currentItem.count += add;
+      heldItem.count -= add;
+      if (heldItem.count <= 0) heldItem = null;
+    } else {
+      if (!isArmor) {
+        const temp = p.inventory[index];
+        p.inventory[index] = heldItem;
+        heldItem = temp;
+      }
+    }
+  }
+
+  updateFloatingDragItem();
+  renderInventoryUI();
+  uPHI(p);
+};
 
       window.addEventListener("mousemove", (e) => {
         if (!localPlayer.inventoryOpen || !heldItem) return;
@@ -6398,36 +6408,29 @@ p.canFly = false;
       }
 
       window.toggleInventory = function() {
-        const modal = document.getElementById("inventory-modal");
-        localPlayer.inventoryOpen = !localPlayer.inventoryOpen;
-        if (localPlayer.inventoryOpen) {
-          if (localPlayer.shopOpen) window.toggleShop();
-          if (localPlayer.emotionMenuOpen) window.toggleEmotionMenu();
-          document.exitPointerLock();
-          modal.classList.remove("hidden");
-          renderInventoryUI();
-          initPreview3D();
-        } else {
-          modal.classList.add("hidden");
-          if (heldItem) {
-            let placed = false;
-            for (let i = 0; i < 36; i++) {
-              if (!localPlayer.inventory[i]) {
-                localPlayer.inventory[i] = heldItem;
-                placed = true;
-                break;
-              }
-            }
-            if (!placed) {
-              // 背包全滿放不下時，自動以掉落物噴出在玩家腳下
-              sDrp(heldItem.id, heldItem.count, localPlayer.x, localPlayer.y + 0.5, localPlayer.z, 0, 0.2, 0, true);
-            }
-            heldItem = null;
-            updateFloatingDragItem();
-          }
-          renderer.domElement.requestPointerLock();
-        }
-      };
+  const modal = document.getElementById("inventory-modal");
+  localPlayer.inventoryOpen = !localPlayer.inventoryOpen;
+  if (localPlayer.inventoryOpen) {
+    if (localPlayer.shopOpen) window.toggleShop();
+    if (localPlayer.emotionMenuOpen) window.toggleEmotionMenu();
+    document.exitPointerLock();
+    modal.classList.remove("hidden");
+    renderInventoryUI();
+    initPreview3D();
+  } else {
+    modal.classList.add("hidden");
+    if (heldItem) {
+      // 🌟 改為呼叫 addItemToInventory，會自動先堆疊未滿 64 的格子，放不下才噴出掉落物
+      const success = addItemToInventory(localPlayer, heldItem.id, heldItem.count, heldItem);
+      if (!success) {
+        sDrp(heldItem.id, heldItem.count, localPlayer.x, localPlayer.y + 0.5, localPlayer.z, 0, 0.2, 0, true);
+      }
+      heldItem = null;
+      updateFloatingDragItem();
+    }
+    renderer.domElement.requestPointerLock();
+  }
+};
 
       /* --- 🌟 3D 模特兒預覽與全螢幕注視系統 --- */
       let previewRenderer, previewScene, previewCamera, previewMesh;
