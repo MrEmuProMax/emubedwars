@@ -2704,11 +2704,24 @@ freeShop: false,
       });
 
       window.addEventListener("mousedown", (e) => {
-        // 🌟 背包打開且游標手上沒拿東西時，點擊背包外面任意處自動關閉並鎖定滑鼠
-        if (localPlayer.inventoryOpen && heldItem === null) {
+        // 🌟 背包開啟時的點擊處理
+        if (localPlayer.inventoryOpen) {
           const modal = document.getElementById("inventory-modal");
           if (modal && !modal.contains(e.target)) {
-            window.toggleInventory();
+            if (heldItem !== null) {
+              // 手上抓著物品點擊背包外面：朝視線前方整坨丟出到世界
+              const dx = Math.sin(localPlayer.yaw) * Math.cos(localPlayer.pitch);
+              const dy = Math.sin(localPlayer.pitch);
+              const dz = Math.cos(localPlayer.yaw) * Math.cos(localPlayer.pitch);
+              sDrp(heldItem.id, heldItem.count, localPlayer.x, localPlayer.y + 1.2, localPlayer.z, dx * 0.35, 0.2 + dy * 0.2, dz * 0.35, true);
+              heldItem = null;
+              updateFloatingDragItem();
+              renderInventoryUI();
+              uPHI(localPlayer);
+            } else {
+              // 手上沒拿物品時點擊外面：自動關閉背包
+              window.toggleInventory();
+            }
             return;
           }
         }
@@ -3370,7 +3383,34 @@ if (e.code === "Space" && localPlayer.canFly && !e.repeat && !ky["Space"]) {
           renderer.domElement.requestPointerLock();
         }
       };
+/* --- 🌟 補上缺失的背包資源統計與扣除函式 --- */
+function countItemInInventory(p, itemId) {
+  if (!p || !p.inventory) return 0;
+  let total = 0;
+  for (let i = 0; i < 36; i++) {
+    if (p.inventory[i] && p.inventory[i].id === itemId) {
+      total += p.inventory[i].count;
+    }
+  }
+  return total;
+}
 
+function deductItemFromInventory(p, itemId, amount) {
+  if (!p || !p.inventory || amount <= 0) return;
+  for (let i = 0; i < 36; i++) {
+    if (p.inventory[i] && p.inventory[i].id === itemId) {
+      if (p.inventory[i].count > amount) {
+        p.inventory[i].count -= amount;
+        amount = 0;
+        break;
+      } else {
+        amount -= p.inventory[i].count;
+        p.inventory[i] = null;
+        if (amount <= 0) break;
+      }
+    }
+  }
+}
       window.buyShopItemByIndex = function (idx) {
         const items = gSI(localPlayer);
         const it = items[idx];
@@ -3384,14 +3424,49 @@ if (e.code === "Space" && localPlayer.canFly && !e.repeat && !ky["Space"]) {
           
           if (it.id === "buy_armor") {
             localPlayer.armorLevel = it.armorTier;
-            // 🌟 自動穿上 4 件套防具
-            localPlayer.armorSlots = [
-              { id: "armor_helmet", tier: it.armorTier },
-              { id: "armor_chest", tier: it.armorTier },
-              { id: "armor_legs", tier: it.armorTier },
-              { id: "armor_boots", tier: it.armorTier }
+
+            // 🌟 尋找 4 種防具各找一個就地升級替換，避免手上或背包已有的舊盔甲多出來
+            const armorTypes = [
+              { id: "armor_helmet", slot: 0 },
+              { id: "armor_chest", slot: 1 },
+              { id: "armor_legs", slot: 2 },
+              { id: "armor_boots", slot: 3 }
             ];
+
+            armorTypes.forEach(({ id: aType, slot }) => {
+              let replaced = false;
+
+              // 1. 優先替換裝備欄 (armorSlots) 中已穿著的該部位
+              if (localPlayer.armorSlots[slot] && localPlayer.armorSlots[slot].id === aType) {
+                localPlayer.armorSlots[slot].tier = it.armorTier;
+                replaced = true;
+              }
+
+              // 2. 檢查游標正抓著的物品 (heldItem)
+              if (!replaced && heldItem && heldItem.id === aType) {
+                heldItem.tier = it.armorTier;
+                replaced = true;
+              }
+
+              // 3. 檢查主背包與快捷欄（包含拿在手上的快捷格）
+              if (!replaced) {
+                for (let i = 0; i < 36; i++) {
+                  if (localPlayer.inventory[i] && localPlayer.inventory[i].id === aType) {
+                    localPlayer.inventory[i].tier = it.armorTier;
+                    replaced = true;
+                    break;
+                  }
+                }
+              }
+
+              // 4. 若身上所有地方都沒找到該防具（如丟入虛空或初次購買），直接裝備到裝備欄
+              if (!replaced) {
+                localPlayer.armorSlots[slot] = { id: aType, tier: it.armorTier };
+              }
+            });
+
             uPVM(localPlayer);
+            updateFloatingDragItem();
           } else if (it.id === "upgrade_sword") {
             localPlayer.swordLevel = it.targetLevel;
             // 更新背包裡所有的劍
@@ -3406,6 +3481,7 @@ if (e.code === "Space" && localPlayer.canFly && !e.repeat && !ky["Space"]) {
           }
 
           renderInventoryUI();
+rS();
           uPHI(localPlayer);
           AE.play("respawn");
         } else {
@@ -3900,6 +3976,7 @@ else if (id === "shield") u = MA.shield;
 else if (id === "shears") u = MA.shears;
 else if (id === "stick") u = MA.stick;
 else if (id === "golden_apple") u = MA.golden_apple;
+else if (id && id.startsWith("armor_")) u = getItemIcon({ id: id, tier: localPlayer.armorLevel });
         else if (id === "fireball") u = MA.fireball;
         else if (id === "emerald") u = MA.emerald;
         else if (id === "diamond") u = MA.diamond;
@@ -4853,6 +4930,7 @@ if (!localPlayer.isDead) {
           else {
             let u, c = 0xffffff;
             if (id === "sword") u = getSwordIcon(currentItem.swordLevel !== undefined ? currentItem.swordLevel : p.swordLevel);
+else if (id && id.startsWith("armor_")) u = getItemIcon(currentItem);
             else if (id === "shears") u = MA.shears;
             else if (id === "stick") u = MA.stick;
             else if (id === "golden_apple") u = MA.golden_apple;
