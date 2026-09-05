@@ -23,5 +23,5 @@
 * **尤濬哲老師:** 架設臺灣免費MQTT server (mqttgo.io)
 * **Google Gemini:** 幫我寫完所有程式
 
-## 🎉 舊更新 / Old Update
+## 📦 舊更新 / Old Update
 * **2026/8/26:** 🌟修理連線問題、因連線問題刪除快速配對(預計還要1週)
