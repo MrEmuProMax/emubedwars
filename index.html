@@ -201,8 +201,7 @@
       <!-- 底部控制提示與快捷列 -->
       <div class="w-full flex flex-col items-center gap-1 pointer-events-none">
         <div class="text-[8px] md:text-[9px] text-white/80 pixel-font text-center leading-tight drop-shadow-[1px_1px_0_#000] bg-black/50 px-3 py-1.5 rounded">
-          [滑鼠左鍵] 攻擊/挖方塊 | [滑鼠右鍵] 放置/使用/開門/點商店 | [滾輪/1~9] 切換快捷欄<br />
-          [WASD] 移動 | [Space] 跳躍 | [C] 潛行 | [Q] 丟棄 | [E] 開背包 | [B] 商店 | [Z] 表情 | [X] 切換視角(3種)
+          [O] 操作說明
         </div>
 
         <!-- 盔甲防禦條 (Armor Bar) 與 血量 (Hearts) -->
@@ -296,6 +295,55 @@
       <h2 class="pixel-font text-[12px] text-center mb-2 border-b-2 border-[#555] pb-2 text-[#222]">動作表情選單</h2>
       <div class="flex flex-col gap-1.5" id="emotion-items-container"></div>
       <button onclick="window.toggleEmotionMenu()" class="mc-shop-btn w-full mt-4 bg-red-500 text-white text-[10px] py-1 border-white hover:bg-red-600">關閉 [Z]</button>
+    </div>
+<!-- 📜 完整操作說明視窗 (按 O 開啟) -->
+    <div id="help-modal" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] max-w-[92vw] bg-[#c6c6c6] border-4 border-t-[#fff] border-l-[#fff] border-r-[#555] border-b-[#555] p-4 z-50 pointer-events-auto shadow-[10px_10px_0_rgba(0,0,0,0.6)] select-none max-h-[85vh] overflow-y-auto">
+      <h2 class="pixel-font text-[13px] text-center mb-3 text-[#222] border-b-2 border-[#555] pb-2">操作指南 & 快捷鍵 [O]</h2>
+      
+      <div class="flex flex-col gap-2.5 text-[9px] pixel-font">
+        <!-- 移動操作 -->
+        <div class="bg-[#8b8b8b] p-2 border-2 border-[#373737] rounded">
+          <div class="text-yellow-300 font-bold mb-1">【基礎移動】</div>
+          <div class="text-white space-y-1 leading-relaxed">
+            <div><span class="text-yellow-200">[WASD]</span> 移動角色</div>
+            <div><span class="text-yellow-200">[Space]</span> 跳躍 (飛行時上升)</div>
+            <div><span class="text-yellow-200">[C]</span> 潛行防墜 (飛行時下降)</div>
+          </div>
+        </div>
+
+        <!-- 戰鬥互動 -->
+        <div class="bg-[#8b8b8b] p-2 border-2 border-[#373737] rounded">
+          <div class="text-red-300 font-bold mb-1">【戰鬥與互動】</div>
+          <div class="text-white space-y-1 leading-relaxed">
+            <div><span class="text-red-200">[滑鼠左鍵]</span> 揮擊 / 連續挖方塊</div>
+            <div><span class="text-red-200">[滑鼠右鍵]</span> 放置方塊 / 吃金蘋果 / 投擲珍珠或火球 / 開關木門 / 點金塊開商店</div>
+          </div>
+        </div>
+
+        <!-- 背包與快捷 -->
+        <div class="bg-[#8b8b8b] p-2 border-2 border-[#373737] rounded">
+          <div class="text-cyan-300 font-bold mb-1">【物品與背包】</div>
+          <div class="text-white space-y-1 leading-relaxed">
+            <div><span class="text-cyan-200">[滾輪 / 1~9]</span> 切換 9 格快捷欄</div>
+            <div><span class="text-cyan-200">[E]</span> 開啟 36 格個人背包 (Shift+點擊快移)</div>
+            <div><span class="text-cyan-200">[Q]</span> 丟棄 1 個道具 (<span class="text-cyan-200">[Ctrl+Q]</span> 丟整組)</div>
+          </div>
+        </div>
+
+        <!-- 系統與視角 -->
+        <div class="bg-[#8b8b8b] p-2 border-2 border-[#373737] rounded">
+          <div class="text-green-300 font-bold mb-1">【系統與視角】</div>
+          <div class="text-white space-y-1 leading-relaxed">
+            <div><span class="text-green-200">[B]</span> 基地村民商店</div>
+            <div><span class="text-green-200">[Z]</span> 動作表情選單 (坐臥/旋轉/舞蹈)</div>
+            <div><span class="text-green-200">[X]</span> 切換視角 (第1人稱 / 第3人稱背後 / 正面自拍)</div>
+            <div><span class="text-green-200">[Enter]</span> 打開/發送聊天訊息</div>
+            <div><span class="text-green-200">[O]</span> 開啟 / 關閉本說明視窗</div>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="window.toggleHelpMenu()" class="mc-shop-btn w-full mt-3 bg-red-500 text-white text-[10px] py-1.5 border-white hover:bg-red-600">關閉說明 [O]</button>
     </div>
     <!-- 死亡重生倒數畫面 -->
     <div id="death-screen" class="absolute inset-0 bg-red-900/60 backdrop-blur-sm z-40 flex flex-col items-center justify-center hidden pointer-events-auto">
@@ -514,9 +562,10 @@ let isChatOpen = false;
 
         // 🌟 3. 管理員專屬指令（執行完畢一律 return true，確保 100% 靜默不發送訊息）
         if (c === "/fly") {
-          localPlayer.isFlying = !localPlayer.isFlying;
-          return true;
-        } else if (c === "/minigun") {
+  localPlayer.canFly = !localPlayer.canFly; // 切換飛行權限
+  localPlayer.isFlying = localPlayer.canFly; // 授權開啟時立即進入飛行，取消時關閉
+  return true;
+} else if (c === "/minigun") {
   localPlayer.hasMinigun = true;
   addItemToInventory(localPlayer, "minigun", 1);
   return true;
@@ -908,6 +957,92 @@ const SVG_ARMOR_HALF = makeHudArmorSvg(HUD_ARMOR_PIXEL_HALF, { "K": "#000000", "
 const SVG_ARMOR_EMPTY = makeHudArmorSvg(HUD_ARMOR_PIXEL_EMPTY, { "K": "#000000" });
 
 const MA = {
+// 🔫 Minigun 機槍圖示
+  minigun: makeSvgIcon(`
+    <rect x="4" y="2" width="4" height="1" fill="#3a3d45"/>
+    <rect x="5" y="2" width="2" height="1" fill="#6c7380"/>
+    <rect x="4" y="3" width="1" height="2" fill="#202227"/>
+    <rect x="7" y="3" width="1" height="2" fill="#202227"/>
+
+    <rect x="2" y="4" width="5" height="1" fill="#2f323a"/>
+    <rect x="2" y="5" width="5" height="5" fill="#22252a"/>
+    <rect x="3" y="5" width="4" height="2" fill="#3d424c"/>
+    <rect x="4" y="6" width="2" height="1" fill="#656c7a"/>
+    <rect x="3" y="8" width="3" height="1" fill="#18191c"/>
+    <rect x="6" y="6" width="1" height="3" fill="#141518"/>
+
+    <rect x="0" y="7" width="2" height="1" fill="#2a1d15"/>
+    <rect x="0" y="8" width="2" height="3" fill="#6d4c38"/>
+    <rect x="0" y="9" width="1" height="2" fill="#8d6248"/>
+    <rect x="1" y="11" width="1" height="1" fill="#3a2518"/>
+    <rect x="2" y="8" width="1" height="1" fill="#1c1d20"/>
+
+    <rect x="3" y="10" width="4" height="2" fill="#1a1b1f"/>
+    <rect x="3" y="10" width="1" height="2" fill="#2e3138"/>
+    <rect x="5" y="10" width="1" height="2" fill="#2e3138"/>
+    <rect x="4" y="12" width="2" height="1" fill="#141517"/>
+
+    <rect x="7" y="5" width="8" height="1" fill="#58606e"/>
+    <rect x="7" y="5" width="6" height="1" fill="#757f91"/>
+    <rect x="7" y="6" width="8" height="1" fill="#2d3036"/>
+    <rect x="7" y="7" width="8" height="1" fill="#8893a6"/>
+    <rect x="8" y="7" width="5" height="1" fill="#b0bccf"/>
+    <rect x="7" y="8" width="8" height="1" fill="#2d3036"/>
+    <rect x="7" y="9" width="8" height="1" fill="#4d5460"/>
+    <rect x="7" y="9" width="6" height="1" fill="#636c7c"/>
+    <rect x="9" y="4" width="1" height="7" fill="#141518"/>
+    <rect x="9" y="5" width="1" height="1" fill="#3d424b"/>
+    <rect x="9" y="7" width="1" height="1" fill="#555c69"/>
+    <rect x="12" y="4" width="1" height="7" fill="#141518"/>
+    <rect x="12" y="5" width="1" height="1" fill="#3d424b"/>
+    <rect x="12" y="7" width="1" height="1" fill="#555c69"/>
+    <rect x="15" y="4" width="1" height="7" fill="#141518"/>
+    <rect x="15" y="5" width="1" height="1" fill="#0b0c0d"/>
+    <rect x="15" y="7" width="1" height="1" fill="#0b0c0d"/>
+    <rect x="15" y="9" width="1" height="1" fill="#0b0c0d"/>
+  `),
+
+  // 🚀 RPG-7 火箭筒圖示
+  rpg: makeSvgIcon(`
+       <rect x="0" y="6" width="1" height="5" fill="#14171a"/>
+    <rect x="0" y="7" width="1" height="3" fill="#0b0d0e"/>
+    <rect x="1" y="7" width="2" height="3" fill="#22262c"/>
+    <rect x="1" y="7" width="2" height="1" fill="#3a4049"/>
+
+    <rect x="3" y="6" width="1" height="5" fill="#14171a"/>
+    <rect x="4" y="7" width="3" height="3" fill="#8f4820"/>
+    <rect x="4" y="7" width="3" height="1" fill="#b35d29"/>
+    <rect x="4" y="9" width="3" height="1" fill="#5e2f15"/>
+    <rect x="7" y="6" width="1" height="5" fill="#14171a"/>
+
+    <rect x="4" y="4" width="3" height="2" fill="#22262c"/>
+    <rect x="4" y="4" width="2" height="1" fill="#3d434d"/>
+    <rect x="6" y="4" width="1" height="2" fill="#00838f"/>
+    <rect x="6" y="4" width="1" height="1" fill="#4dd0e1"/>
+    <rect x="5" y="6" width="1" height="1" fill="#14171a"/>
+
+    <rect x="3" y="10" width="1" height="2" fill="#6d3719"/>
+    <rect x="3" y="11" width="1" height="1" fill="#4a2511"/>
+    <rect x="6" y="10" width="1" height="3" fill="#8f4820"/>
+    <rect x="6" y="11" width="1" height="2" fill="#5e2f15"/>
+    <rect x="7" y="10" width="1" height="1" fill="#14171a"/>
+
+    <rect x="8" y="7" width="2" height="3" fill="#22262c"/>
+    <rect x="8" y="7" width="2" height="1" fill="#3a4049"/>
+    <rect x="10" y="6" width="1" height="5" fill="#14171a"/>
+    <rect x="10" y="7" width="1" height="3" fill="#2a2e36"/>
+
+    <rect x="11" y="8" width="1" height="1" fill="#14171a"/>
+    <rect x="12" y="7" width="1" height="3" fill="#3b4728"/>
+    <rect x="12" y="7" width="1" height="1" fill="#54653a"/>
+    <rect x="13" y="6" width="1" height="5" fill="#4d5b36"/>
+    <rect x="13" y="6" width="1" height="1" fill="#758a52"/>
+    <rect x="13" y="10" width="1" height="1" fill="#2c361e"/>
+    <rect x="14" y="7" width="1" height="3" fill="#4d5b36"/>
+    <rect x="14" y="7" width="1" height="1" fill="#758a52"/>
+    <rect x="15" y="8" width="1" height="1" fill="#fbbf24"/>
+  `),
+
   // 🪵 木劍 (Oak Wood Sword)
   wood_sword: makePixelSwordSvg({
     bEdge: "#382312", bHi: "#e8be82", bMid: "#c29359", bSh: "#8f6434",
@@ -977,9 +1112,47 @@ stick: makeSvgIcon(`
     <rect x="8" y="3" width="1" height="10" fill="#7a4b27"/>
     <rect x="7" y="13" width="2" height="1" fill="#4a2e18"/>
   `),
+
+  // 🍎 金蘋果圖示 (精細像素版：帶果柄、綠葉與黃金反光)
+  golden_apple: makeSvgIcon(`
+    <rect x="7" y="1" width="1" height="3" fill="#5c3a21"/>
+    <rect x="8" y="2" width="1" height="1" fill="#795548"/>
+    <rect x="9" y="1" width="2" height="2" fill="#7cb342"/>
+    <rect x="9" y="1" width="1" height="1" fill="#aed581"/>
+
+    <rect x="5" y="3" width="2" height="1" fill="#7a4d00"/>
+    <rect x="9" y="3" width="2" height="1" fill="#7a4d00"/>
+    <rect x="3" y="4" width="2" height="1" fill="#7a4d00"/>
+    <rect x="11" y="4" width="2" height="1" fill="#7a4d00"/>
+    <rect x="2" y="5" width="1" height="6" fill="#7a4d00"/>
+    <rect x="13" y="5" width="1" height="6" fill="#7a4d00"/>
+    <rect x="3" y="11" width="2" height="1" fill="#7a4d00"/>
+    <rect x="11" y="11" width="2" height="1" fill="#7a4d00"/>
+    <rect x="4" y="12" width="3" height="1" fill="#7a4d00"/>
+    <rect x="9" y="12" width="3" height="1" fill="#7a4d00"/>
+    <rect x="6" y="13" width="4" height="1" fill="#7a4d00"/>
+
+    <rect x="4" y="4" width="8" height="8" fill="#ffd700"/>
+    <rect x="3" y="5" width="10" height="6" fill="#ffd700"/>
+
+    <rect x="4" y="5" width="3" height="3" fill="#fff9c4"/>
+    <rect x="4" y="5" width="2" height="2" fill="#ffffff"/>
+    <rect x="5" y="8" width="1" height="1" fill="#fff9c4"/>
+
+    <rect x="7" y="4" width="2" height="2" fill="#ffb300"/>
+    <rect x="9" y="5" width="3" height="5" fill="#ffb300"/>
+    <rect x="4" y="9" width="8" height="3" fill="#ffb300"/>
+    <rect x="5" y="11" width="6" height="1" fill="#ff9800"/>
+    <rect x="6" y="12" width="4" height="1" fill="#f57c00"/>
+    <rect x="7" y="3" width="2" height="1" fill="#4a2e00"/>
+  `),
   // 🛡️ 盾牌圖示
-  shield: makeSvgIcon('<path d="M3 2h10v6c0 4-5 6-5 6s-5-2-5-6V2z" fill="#cfd8dc"/><path d="M4 3h8v5c0 3-4 5-4 5s-4-2-4-5V3z" fill="#8d6e63"/><circle cx="8" cy="7" r="1.5" fill="#37474f"/>'),
-  golden_apple: makeSvgIcon('<circle cx="8" cy="9" r="5.5" fill="#ffd600"/><circle cx="6.5" cy="7.5" r="1.5" fill="#fff9c4"/><path d="M8 2c1 0 1 2 0 3" stroke="#8d6e63" stroke-width="1.5" fill="none"/>'),
+  shield: makeSvgIcon(`
+    <path d="M2 1h12v7c0 4.5-6 7-6 7s-6-2.5-6-7V1z" fill="#5c3a21"/>
+    <path d="M3 2h10v6c0 3.8-5 5.8-5 5.8s-5-2-5-5.8V2z" fill="#8d6e63"/>
+    <path d="M4 3h8v5c0 3-4 4.5-4 4.5s-4-1.5-4-4.5V3z" fill="#d0d7de"/>
+    <rect x="7" y="5.5" width="2" height="2" fill="#57606a"/>
+  `),
 
   // 圓瓶藥水 (圓形燒瓶底、木塞、玻璃瓶頸與弧形液面)
   potion: makeSvgIcon(`
@@ -2119,12 +2292,12 @@ function bVM() {
               }
               break;
             case "MINIGUN_FIRE":
-  AE.play("minigun");
-  spawnMinigunTracer(msg.x, msg.y, msg.z, msg.dx, msg.dy, msg.dz, msg.hitDist);
-  if (remotePlayer) {
-    remotePlayer.minigunSpin = (remotePlayer.minigunSpin || 0) + 1.2;
-  }
-  break;
+              AE.play("minigun");
+              spawnMinigunTracer(msg.x, msg.y, msg.z, msg.dx, msg.dy, msg.dz, msg.hitDist);
+              if (remotePlayer) {
+                remotePlayer.minigunSpin = (remotePlayer.minigunSpin || 0) + 4.5; // 👈 改為 4.5
+              }
+              break;
             case "PING":
               this.send({ type: "PONG", time: msg.time });
               break;
@@ -2207,21 +2380,25 @@ case "DOOR_BREAK":
               AE.play("place");
               break;
             case "BED_DESTROY":
-              if (msg.team === "emu") {
-                sB(65, 13, 25, 0);
-                sB(65, 13, 24, 0);
-                P1.bedAlive = false;
-                cBP(65.5, 13.3, 24.5, 0x2962ff);
-              } else {
-                sB(65, 13, 105, 0);
-                sB(65, 13, 106, 0);
-                P2.bedAlive = false;
-                cBP(65.5, 13.3, 105.5, 0xff6d00);
-              }
-              bVM();
-              AE.play("bed_break");
-              uHUD();
-              break;
+  if (msg.team === "emu") {
+    sB(65, 13, 25, 0);
+    sB(65, 13, 24, 0);
+    P1.bedAlive = false;
+    cBP(65.5, 13.3, 24.5, 0x2962ff);
+    if (window.blueBedHeadMesh) window.blueBedHeadMesh.visible = false;
+    if (window.blueBedFootMesh) window.blueBedFootMesh.visible = false;
+  } else {
+    sB(65, 13, 105, 0);
+    sB(65, 13, 106, 0);
+    P2.bedAlive = false;
+    cBP(65.5, 13.3, 105.5, 0xff6d00);
+    if (window.orangeBedHeadMesh) window.orangeBedHeadMesh.visible = false;
+    if (window.orangeBedFootMesh) window.orangeBedFootMesh.visible = false;
+  }
+  bVM();
+  AE.play("bed_break");
+  uHUD();
+  break;
             case "DROP_SPAWN":
               sDrp(msg.id, msg.count, msg.x, msg.y, msg.z, msg.vx, msg.vy, msg.vz, false, msg.dropId);
               break;
@@ -2273,6 +2450,14 @@ case "DOOR_BREAK":
               }
               uHUD();
               break;
+case "DEATH_DROPS_BATCH":
+  // 對方電腦收到整包清單後，在本地同時生成所有的掉落物
+  if (msg.drops && Array.isArray(msg.drops)) {
+    msg.drops.forEach((d) => {
+      sDrp(d.id, d.count, d.x, d.y, d.z, d.vx, d.vy, d.vz, false, d.dropId);
+    });
+  }
+  break;
 case "PLAYER_LEAVE":
               if (gameSessionStarted) {
                 alert("對手已離開遊戲！已返回大廳。");
@@ -2382,6 +2567,7 @@ isAdmin: false,
         armorSlots: [null, null, null, null], // [頭盔, 胸甲, 護腿, 靴子]
         isSneaking: false,
         isFlying: false,
+canFly: false,
         onGround: false,
         onGround_prev: false,
         activeSlot: 0,
@@ -2472,6 +2658,7 @@ isAdmin: false,
         armorSlots: [null, null, null, null], // [頭盔, 胸甲, 護腿, 靴子]
         isSneaking: false,
         isFlying: false,
+canFly: false,
         onGround: false,
         onGround_prev: false,
         activeSlot: 0,
@@ -2555,13 +2742,14 @@ freeShop: false,
       });
 
       window.addEventListener("click", () => {
-  if (!isPointerLocked && !localPlayer.shopOpen && !localPlayer.emotionMenuOpen && !localPlayer.inventoryOpen && !isChatOpen && document.getElementById("lobby-screen").classList.contains("hidden")) {
+  // ✅ 在判斷中加上 && !isHelpOpen
+  if (!isPointerLocked && !localPlayer.shopOpen && !localPlayer.emotionMenuOpen && !localPlayer.inventoryOpen && !isHelpOpen && !isChatOpen && document.getElementById("lobby-screen").classList.contains("hidden")) {
     renderer.domElement.requestPointerLock();
   }
 });
 
       window.addEventListener("mousemove", (e) => {
-        if (!isPointerLocked || localPlayer.isDead || localPlayer.shopOpen || localPlayer.emotionMenuOpen) return;
+        if (!isPointerLocked || localPlayer.isDead || localPlayer.shopOpen || localPlayer.emotionMenuOpen || isHelpOpen) return;
         const sensitivity = 0.0022;
         localPlayer.yaw -= e.movementX * sensitivity;
         localPlayer.pitch = Math.max(-Math.PI / 2.05, Math.min(Math.PI / 2.05, localPlayer.pitch - e.movementY * sensitivity));
@@ -2569,15 +2757,31 @@ freeShop: false,
       });
 
       window.addEventListener("mousedown", (e) => {
-        // 🌟 背包打開且游標手上沒拿東西時，點擊背包外面任意處自動關閉並鎖定滑鼠
-        if (localPlayer.inventoryOpen && heldItem === null) {
+        // 🌟 背包開啟時的點擊處理
+        if (localPlayer.inventoryOpen) {
           const modal = document.getElementById("inventory-modal");
           if (modal && !modal.contains(e.target)) {
-            window.toggleInventory();
+            if (heldItem !== null) {
+              // 🛡️ 禁止把防具和核心武器丟出背包外
+              const protectedItems = ["sword", "minigun", "rpg", "shield"];
+              if (!heldItem.id.startsWith("armor_") && !protectedItems.includes(heldItem.id)) {
+                const dx = Math.sin(localPlayer.yaw) * Math.cos(localPlayer.pitch);
+                const dy = Math.sin(localPlayer.pitch);
+                const dz = Math.cos(localPlayer.yaw) * Math.cos(localPlayer.pitch);
+                sDrp(heldItem.id, heldItem.count, localPlayer.x, localPlayer.y + 1.2, localPlayer.z, dx * 0.35, 0.2 + dy * 0.2, dz * 0.35, true);
+                heldItem = null;
+                updateFloatingDragItem();
+                renderInventoryUI();
+                uPHI(localPlayer);
+              }
+            } else {
+              window.toggleInventory();
+            }
             return;
           }
         }
 
+        // 🌟 補回被刪除的滑鼠左右鍵動作：
         if (!isPointerLocked || localPlayer.isDead || localPlayer.shopOpen || localPlayer.emotionMenuOpen || localPlayer.inventoryOpen) return;
         if (e.button === 0) {
           isLMBDown = true;
@@ -2614,7 +2818,7 @@ freeShop: false,
         uPHI(localPlayer);
       });
 
-      const allowedKeys = ["KeyW", "KeyA", "KeyS", "KeyD", "Space", "KeyC", "KeyQ", "KeyB", "KeyZ", "KeyX", "KeyT", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9"];
+      const allowedKeys = ["KeyW", "KeyA", "KeyS", "KeyD", "Space", "KeyC", "KeyQ", "KeyB", "KeyZ", "KeyX", "KeyT", "KeyO", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9"];
 
       window.addEventListener("keydown", (e) => {
   if (!gameSessionStarted) return;
@@ -2656,15 +2860,24 @@ if (e.code === "Enter") {
           toggleChatInput(true, true); // 進入完全隱形輸入
           return;
         }
-        // 雙擊空白鍵解除或切換飛行
-        if (e.code === "Space" && localPlayer.isFlying && !e.repeat && !ky["Space"]) {
-          const now = performance.now();
-          if (now - (localPlayer.lastJumpTap || 0) < 300) {
-            localPlayer.isFlying = false;
-            localPlayer.lastJumpTap = 0;
-          } else {
-            localPlayer.lastJumpTap = now;
-          }
+        // 🌟 雙擊空白鍵切換飛行狀態（只有在輸入過 /fly 獲得 canFly 權限後才生效）
+if (e.code === "Space" && localPlayer.canFly && !e.repeat && !ky["Space"]) {
+  const now = performance.now();
+  if (now - (localPlayer.lastJumpTap || 0) < 300) {
+    localPlayer.isFlying = !localPlayer.isFlying; // 雙擊：開啟或解除飛行
+    localPlayer.lastJumpTap = 0;
+    if (localPlayer.isFlying) {
+      localPlayer.vy = 0; // 開啟飛行瞬間消除重力下墜
+    }
+  } else {
+    localPlayer.lastJumpTap = now;
+  }
+}
+// O 鍵開啟/關閉操作說明
+        if (e.code === "KeyO" && !ky[e.code] && !localPlayer.isDead) {
+          ky[e.code] = true;
+          window.toggleHelpMenu();
+          return;
         }
 
         // B 鍵開啟/關閉商店
@@ -2711,13 +2924,37 @@ if (e.code === "Enter") {
           return;
         }
 
-        // Q 鍵丟棄手持物品
+        // Q 鍵與 Shift + Q 丟棄物品
         if (e.code === "KeyQ" && !ky[e.code] && !localPlayer.isDead) {
           ky[e.code] = true;
-          tItm(localPlayer);
+          // 🌟 判定 Ctrl 鍵 (Mac 上支援 Cmd 鍵)，滿足則整組丟出
+          const isDropAll = e.ctrlKey || e.metaKey;
+
+          if (localPlayer.inventoryOpen) {
+            // 🎒 背包開啟時：
+            if (hoveredSlotIndex !== -1) {
+              // 1. 滑鼠懸停在某個格子上 -> 丟出該格子物品 (Q: 1個, Ctrl+Q: 整組)
+              dropItemFromSlot(localPlayer, hoveredSlotIndex, isDropAll);
+            } else if (heldItem !== null) {
+              // 2. 滑鼠正抓著物品游標懸空 -> 丟出游標上的物品 (Q: 1個, Ctrl+Q: 整組)
+              const protectedItems = ["sword", "minigun", "rpg", "shield"];
+              if (!heldItem.id.startsWith("armor_") && !protectedItems.includes(heldItem.id)) {
+                const dropCount = isDropAll ? heldItem.count : 1;
+                heldItem.count -= dropCount;
+                const dx = Math.sin(localPlayer.yaw) * Math.cos(localPlayer.pitch);
+                const dy = Math.sin(localPlayer.pitch);
+                const dz = Math.cos(localPlayer.yaw) * Math.cos(localPlayer.pitch);
+                sDrp(heldItem.id, dropCount, localPlayer.x, localPlayer.y + 1.2, localPlayer.z, dx * 0.3, 0.2 + dy * 0.2, dz * 0.3, true);
+                if (heldItem.count <= 0) heldItem = null;
+                updateFloatingDragItem();
+              }
+            }
+          } else {
+            // 🎮 正常遊戲中：針對當前選取的快捷欄格子丟棄 (Q: 1個, Ctrl+Q: 整組)
+            dropItemFromSlot(localPlayer, localPlayer.activeSlot, isDropAll);
+          }
           return;
         }
-
         ky[e.code] = true;
       });
 
@@ -3011,18 +3248,18 @@ if (e.code === "Enter") {
         }
 
         if (p.y < -12) {
-          const held = p.inventory ? p.inventory[p.activeSlot] : null;
-          if (held && held.id === "shield") {
-            // 🌟 手持盾牌掉入虛空：給予向上噴射的大衝量（飛越空島至高處約 24 格，重複彈跳）
-            p.vy = 1.45;
-            p.y = -11.8;
-            p.vx *= 0.8;
-            p.vz *= 0.8;
-            AE.play("jump");
-          } else {
-            aDmg(p, 1000);
-          }
-        }
+  const held = p.inventory ? p.inventory[p.activeSlot] : null;
+  if (held && held.id === "shield") {
+    p.vy = 2.9;
+    p.y = -11.8;
+    p.vx *= 0.8;
+    p.vz *= 0.8;
+    AE.play("jump");
+  } else {
+    p.vy = 0; // 停止下墜速度
+    aDmg(p, 1000);
+  }
+}
 
         if (p.actionCooldown > 0) p.actionCooldown--;
         if (p.gappleCooldownTimer > 0) p.gappleCooldownTimer = Math.max(0, p.gappleCooldownTimer - 0.05);
@@ -3222,7 +3459,9 @@ if (e.code === "Enter") {
         const sd = document.getElementById("shop-modal");
         localPlayer.shopOpen = !localPlayer.shopOpen;
         if (localPlayer.shopOpen) {
+if (isHelpOpen) window.toggleHelpMenu();
           if (localPlayer.emotionMenuOpen) window.toggleEmotionMenu();
+          if (localPlayer.inventoryOpen) window.toggleInventory(); // 👈 加上這行防止介面重疊
           document.exitPointerLock();
           localPlayer.shopTab = "items";
           sd.classList.remove("hidden");
@@ -3232,7 +3471,34 @@ if (e.code === "Enter") {
           renderer.domElement.requestPointerLock();
         }
       };
+/* --- 🌟 補上缺失的背包資源統計與扣除函式 --- */
+function countItemInInventory(p, itemId) {
+  if (!p || !p.inventory) return 0;
+  let total = 0;
+  for (let i = 0; i < 36; i++) {
+    if (p.inventory[i] && p.inventory[i].id === itemId) {
+      total += p.inventory[i].count;
+    }
+  }
+  return total;
+}
 
+function deductItemFromInventory(p, itemId, amount) {
+  if (!p || !p.inventory || amount <= 0) return;
+  for (let i = 0; i < 36; i++) {
+    if (p.inventory[i] && p.inventory[i].id === itemId) {
+      if (p.inventory[i].count > amount) {
+        p.inventory[i].count -= amount;
+        amount = 0;
+        break;
+      } else {
+        amount -= p.inventory[i].count;
+        p.inventory[i] = null;
+        if (amount <= 0) break;
+      }
+    }
+  }
+}
       window.buyShopItemByIndex = function (idx) {
         const items = gSI(localPlayer);
         const it = items[idx];
@@ -3246,14 +3512,49 @@ if (e.code === "Enter") {
           
           if (it.id === "buy_armor") {
             localPlayer.armorLevel = it.armorTier;
-            // 🌟 自動穿上 4 件套防具
-            localPlayer.armorSlots = [
-              { id: "armor_helmet", tier: it.armorTier },
-              { id: "armor_chest", tier: it.armorTier },
-              { id: "armor_legs", tier: it.armorTier },
-              { id: "armor_boots", tier: it.armorTier }
+
+            // 🌟 尋找 4 種防具各找一個就地升級替換，避免手上或背包已有的舊盔甲多出來
+            const armorTypes = [
+              { id: "armor_helmet", slot: 0 },
+              { id: "armor_chest", slot: 1 },
+              { id: "armor_legs", slot: 2 },
+              { id: "armor_boots", slot: 3 }
             ];
+
+            armorTypes.forEach(({ id: aType, slot }) => {
+              let replaced = false;
+
+              // 1. 優先替換裝備欄 (armorSlots) 中已穿著的該部位
+              if (localPlayer.armorSlots[slot] && localPlayer.armorSlots[slot].id === aType) {
+                localPlayer.armorSlots[slot].tier = it.armorTier;
+                replaced = true;
+              }
+
+              // 2. 檢查游標正抓著的物品 (heldItem)
+              if (!replaced && heldItem && heldItem.id === aType) {
+                heldItem.tier = it.armorTier;
+                replaced = true;
+              }
+
+              // 3. 檢查主背包與快捷欄（包含拿在手上的快捷格）
+              if (!replaced) {
+                for (let i = 0; i < 36; i++) {
+                  if (localPlayer.inventory[i] && localPlayer.inventory[i].id === aType) {
+                    localPlayer.inventory[i].tier = it.armorTier;
+                    replaced = true;
+                    break;
+                  }
+                }
+              }
+
+              // 4. 若身上所有地方都沒找到該防具（如丟入虛空或初次購買），直接裝備到裝備欄
+              if (!replaced) {
+                localPlayer.armorSlots[slot] = { id: aType, tier: it.armorTier };
+              }
+            });
+
             uPVM(localPlayer);
+            updateFloatingDragItem();
           } else if (it.id === "upgrade_sword") {
             localPlayer.swordLevel = it.targetLevel;
             // 更新背包裡所有的劍
@@ -3268,6 +3569,7 @@ if (e.code === "Enter") {
           }
 
           renderInventoryUI();
+rS();
           uPHI(localPlayer);
           AE.play("respawn");
         } else {
@@ -3322,6 +3624,30 @@ window.buyTrapByIndex = function (idx) {
     AE.play("hit");
   }
 };
+
+let isHelpOpen = false;
+
+      window.toggleHelpMenu = function () {
+        const modal = document.getElementById("help-modal");
+        if (!modal) return;
+        isHelpOpen = !isHelpOpen;
+
+        if (isHelpOpen) {
+          // 打開說明時，關閉其他可能重疊的彈窗並釋放滑鼠指標
+          if (localPlayer.shopOpen) window.toggleShop();
+          if (localPlayer.emotionMenuOpen) window.toggleEmotionMenu();
+          if (localPlayer.inventoryOpen) window.toggleInventory();
+          document.exitPointerLock();
+          modal.classList.remove("hidden");
+        } else {
+          modal.classList.add("hidden");
+          // 關閉時若無其他彈窗，重新鎖定滑鼠指標
+          if (!localPlayer.shopOpen && !localPlayer.emotionMenuOpen && !localPlayer.inventoryOpen && !localPlayer.isDead && !isChatOpen) {
+            renderer.domElement.requestPointerLock();
+          }
+        }
+      };
+
       window.toggleEmotionMenu = function () {
         const ed = document.getElementById("emotion-modal");
         localPlayer.emotionMenuOpen = !localPlayer.emotionMenuOpen;
@@ -3756,12 +4082,13 @@ const kbs = held && held.id === "stick" ? 31.5 : 10.5;
           pc = 0xffffff;
         // ✅ 修改後：補上劍與武器圖示
 if (id === "sword") u = getSwordIcon(localPlayer.swordLevel);
-else if (id === "minigun") u = MA.iron_sword;
-else if (id === "rpg") u = MA.fireball;
+else if (id === "minigun") u = MA.minigun;
+else if (id === "rpg") u = MA.rpg;
 else if (id === "shield") u = MA.shield;
 else if (id === "shears") u = MA.shears;
 else if (id === "stick") u = MA.stick;
 else if (id === "golden_apple") u = MA.golden_apple;
+else if (id && id.startsWith("armor_")) u = getItemIcon({ id: id, tier: localPlayer.armorLevel });
         else if (id === "fireball") u = MA.fireball;
         else if (id === "emerald") u = MA.emerald;
         else if (id === "diamond") u = MA.diamond;
@@ -3820,35 +4147,80 @@ else if (id === "golden_apple") u = MA.golden_apple;
         }
       }
 
-      function tItm(p) {
-        const held = p.inventory[p.activeSlot];
-        if (!held) return;
-        
-        const dropId = held.id;
-        held.count--;
-        if (held.count <= 0) p.inventory[p.activeSlot] = null;
-        
-        renderInventoryUI();
-        uPHI(p);
+      function dropItemFromSlot(p, slotIndex, dropAll = false) {
+  // 禁止丟棄裝備欄防具
+  if (slotIndex >= 36 && slotIndex <= 39) return;
 
-        const dx = Math.sin(p.yaw) * Math.cos(p.pitch);
-        const dy = Math.sin(p.pitch);
-        const dz = Math.cos(p.yaw) * Math.cos(p.pitch);
-        sDrp(dropId, 1, p.x, p.y + 1.2, p.z, dx * 0.3, 0.2 + dy * 0.2, dz * 0.3, true);
-      }
+  const item = p.inventory[slotIndex];
+  if (!item) return;
 
-      function hDD(p) {
-  if (!p.inventory) return;
-  for (let i = 0; i < 36; i++) {
-    const it = p.inventory[i];
-    if (it && it.id !== "sword") { // 劍保留，其餘噴出
-      for (let c = 0; c < it.count; c++) {
-        sDrp(it.id, 1, p.x, p.y + 1.0, p.z, (Math.random() - 0.5) * 0.25, 0.2, (Math.random() - 0.5) * 0.25, true);
-      }
-      p.inventory[i] = null;
-    }
+  // 床戰重要武器防丟保護（避免丟失造成對局損壞）
+  if (item.id === "sword" || item.id === "minigun" || item.id === "rpg" || item.id === "shield" || item.id.startsWith("armor_")) {
+    return;
   }
+
+  const dropCount = dropAll ? item.count : 1;
+  item.count -= dropCount;
+
+  const dropId = item.id;
+  if (item.count <= 0) {
+    p.inventory[slotIndex] = null;
+  }
+
+  renderInventoryUI();
+  uPHI(p);
+
+  // 計算朝向投擲
+  const dx = Math.sin(p.yaw) * Math.cos(p.pitch);
+  const dy = Math.sin(p.pitch);
+  const dz = Math.cos(p.yaw) * Math.cos(p.pitch);
+  sDrp(dropId, dropCount, p.x, p.y + 1.2, p.z, dx * 0.3, 0.2 + dy * 0.2, dz * 0.3, true);
 }
+function hDD(p) {
+        if (!p.inventory) return;
+        const keepItems = ["sword", "minigun", "rpg", "shield"];
+        const dropsBatch = []; // 📦 用來打包所有掉落物
+
+        for (let i = 0; i < 36; i++) {
+          const it = p.inventory[i];
+          // 排除重要武器與 armor_ 防具（避免死掉時防具掉落導致刷裝備）
+          if (it && !keepItems.includes(it.id) && !it.id.startsWith("armor_")) {
+            const dropId = "drop-" + Math.floor(Math.random() * 1000000);
+            const vx = (Math.random() - 0.5) * 0.25;
+            const vy = 0.2 + Math.random() * 0.1;
+            const vz = (Math.random() - 0.5) * 0.25;
+
+            dropsBatch.push({
+              dropId: dropId,
+              id: it.id,
+              count: it.count,
+              x: p.x,
+              y: p.y + 1.0,
+              z: p.z,
+              vx: vx,
+              vy: vy,
+              vz: vz
+            });
+
+            // 本地生成掉落物實體
+            sDrp(it.id, it.count, p.x, p.y + 1.0, p.z, vx, vy, vz, false, dropId);
+            p.inventory[i] = null;
+          }
+        }
+
+        // 一次性將整包掉落物發送給對方
+        if (dropsBatch.length > 0) {
+          NetManager.send({
+            type: "DEATH_DROPS_BATCH",
+            drops: dropsBatch
+          }, 1);
+        }
+
+        if (p === localPlayer) {
+          renderInventoryUI();
+          uPHI(p);
+        }
+      }
 
       function uDP() {
         for (let i = aD.length - 1; i >= 0; i--) {
@@ -3872,15 +4244,22 @@ else if (id === "golden_apple") u = MA.golden_apple;
           if (d.pickupDelay <= 0 && !localPlayer.isDead) {
             let dx = localPlayer.x - d.x, dy = localPlayer.y - d.y, dz = localPlayer.z - d.z;
             if (Math.hypot(dx, dz) < 1.1 && Math.abs(dy) < 1.6) {
-              addItemToInventory(localPlayer, d.id, d.count);
-              AE.play("jump");
-              NetManager.send({ type: "DROP_PICKUP", dropId: d.dropId });
-              scene.remove(d.mesh);
-              aD.splice(i, 1);
+              // 🌟 檢查實際能吃掉多少個
+              const taken = addItemToInventory(localPlayer, d.id, d.count);
+              if (taken > 0) {
+                AE.play("jump");
+                d.count -= taken;
+                // 如果整堆都撿完了，才通知網路並從世界移除實體
+                if (d.count <= 0) {
+                  NetManager.send({ type: "DROP_PICKUP", dropId: d.dropId });
+                  scene.remove(d.mesh);
+                  aD.splice(i, 1);
+                }
+              }
             }
           }
-        }
-      }
+        } // 👈 補回 1：閉合 for 迴圈
+      }   // 👈 補回 2：閉合 function uDP()
 
       function uPP() {
         for (let i = aP.length - 1; i >= 0; i--) {
@@ -4651,20 +5030,22 @@ if (!localPlayer.isDead) {
           // 🌟 物品 5：原版立體盾牌 3D 模型
           else if (id === "shield") {
             m = new THREE.Group();
-            const woodRimMat = new THREE.MeshLambertMaterial({ color: 0x8b5a2b });
-            const ironEdgeMat = new THREE.MeshLambertMaterial({ color: 0xd0d0d0 });
-            const shieldFaceMat = new THREE.MeshLambertMaterial({ color: 0xefefef });
-            const bossMat = new THREE.MeshLambertMaterial({ color: 0x606060 });
+            const outerWoodMat = new THREE.MeshLambertMaterial({ color: 0x6d4c41 }); // 外框深木色
+            const ironFaceMat = new THREE.MeshLambertMaterial({ color: 0xd4d8dc });  // 中間鐵面
+            const bossMat = new THREE.MeshLambertMaterial({ color: 0x474e56 });      // 中心金屬鉚釘
+            const handleMat = new THREE.MeshLambertMaterial({ color: 0x4a2e18 });    // 握把木色
 
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.68, 0.03), woodRimMat);
-            m.add(body);
-            const face = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.64, 0.035), shieldFaceMat);
-            m.add(face);
-            const ironRim = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.70, 0.02), ironEdgeMat);
-            m.add(ironRim);
+            // 外圈木質底板
+            const woodBase = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.70, 0.03), outerWoodMat);
+            m.add(woodBase);
+            // 中間鐵板面
+            const ironFace = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.62, 0.035), ironFaceMat);
+            m.add(ironFace);
+            // 正中央金屬鉚釘
             const boss = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.045), bossMat);
             m.add(boss);
-            const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, 0.04), woodRimMat);
+            // 背面握把
+            const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, 0.04), handleMat);
             handle.position.set(0, 0, 0.04);
             m.add(handle);
 
@@ -4675,11 +5056,12 @@ if (!localPlayer.isDead) {
               m.position.set(0, 0.15, 0.25);
               m.rotation.set(Math.PI / 4, 0, 0);
             }
-          } 
+          }
           // 🌟 物品 6：所有一般像素物品（劍、木棒、剪刀、金蘋果、火球、藥水、珍珠、礦物）
           else {
             let u, c = 0xffffff;
             if (id === "sword") u = getSwordIcon(currentItem.swordLevel !== undefined ? currentItem.swordLevel : p.swordLevel);
+else if (id && id.startsWith("armor_")) u = getItemIcon(currentItem);
             else if (id === "shears") u = MA.shears;
             else if (id === "stick") u = MA.stick;
             else if (id === "golden_apple") u = MA.golden_apple;
@@ -5794,13 +6176,18 @@ for (let i = pt.length - 1; i >= 0; i--) {
               sDrp(s.item, 1, s.x + 0.5, 15.0, s.z + 0.5, Math.cos(angle) * spd, 0.05, Math.sin(angle) * spd, true);
             }
           }
-          s.ctx.clearRect(0, 0, 512, 256);
-          s.ctx.font = 'bold 80px "Press Start 2P", monospace';
-          s.ctx.textAlign = "center";
-          s.ctx.textBaseline = "middle";
-          s.ctx.fillStyle = s.color;
-          s.ctx.fillText(s.timer.toFixed(1) + "s", 256, 128);
-          s.texture.needsUpdate = true;
+          // ✅ 修改後：
+const timeStr = s.timer.toFixed(1) + "s";
+if (s.lastText !== timeStr) {
+  s.lastText = timeStr;
+  s.ctx.clearRect(0, 0, 512, 256);
+  s.ctx.font = 'bold 80px "Press Start 2P", monospace';
+  s.ctx.textAlign = "center";
+  s.ctx.textBaseline = "middle";
+  s.ctx.fillStyle = s.color;
+  s.ctx.fillText(timeStr, 256, 128);
+  s.texture.needsUpdate = true;
+}
         });
 
         // 死亡重生倒數
@@ -5936,6 +6323,7 @@ function resetPlayerAllData(p) {
   p.hasMinigun = false;
   p.hasRPG = false;
   p.freeShop = false;
+p.canFly = false;
   p.isAdmin = false;
   p.isFlying = false;
   p.teamSharpness = false;
@@ -5961,12 +6349,28 @@ function resetPlayerAllData(p) {
   renderInventoryUI(); // 替換舊的 uRUI(p)
 }
 /* --- 🎒 Minecraft 36 格背包、防具升級與 3D 模特兒系統 --- */
+// 🌟 記錄當前滑鼠懸停的背包格子索引 (-1 代表無懸停)
+let hoveredSlotIndex = -1;
+
+window.setHoveredSlot = function (index) {
+  hoveredSlotIndex = index;
+};
+
+window.clearHoveredSlot = function (index) {
+  // 如果是游標自然移開才清空，避免 DOM 重繪瞬間丟失懸停
+  if (hoveredSlotIndex === index && !ky["KeyQ"]) {
+    hoveredSlotIndex = -1;
+  }
+};
       let heldItem = null;
 
       function getItemIcon(item) {
         if (!item) return "";
         if (item.id === "sword") return getSwordIcon(item.swordLevel !== undefined ? item.swordLevel : localPlayer.swordLevel);
         if (item.id === "wool") return localPlayer.id === "emu" ? MA.blue_wool : MA.orange_wool;
+        if (item.id === "minigun") return MA.minigun;
+        if (item.id === "rpg") return MA.rpg;
+        if (item.id === "shield") return MA.shield; // 👈 確保直接讀取盾牌圖示
         
         // 🌟 根據防具階級（Tier 1/2 鐵白銀色，Tier 3 鑽石青色）動態生成對應顏色圖示
         if (item.id && item.id.startsWith("armor_")) {
@@ -6004,107 +6408,110 @@ function resetPlayerAllData(p) {
         for (let i = 0; i < emptyCount; i++) html += `<img src="${SVG_ARMOR_EMPTY}" class="w-[16px] h-[16px] mx-[0.5px] select-none opacity-30" />`;
         ct.innerHTML = html;
       }
-// 🌟 將物品加入玩家背包（優先堆疊，再找空格）
-      function addItemToInventory(p, itemId, count = 1, extra = {}) {
-        // 1. 嘗試堆疊 (可堆疊上限 64，劍/剪刀/木棒/槍/盾不可堆疊)
-        const unstackable = ["sword", "shears", "stick", "minigun", "rpg", "shield"];
-        if (!unstackable.includes(itemId)) {
-          for (let i = 0; i < 36; i++) {
-            if (p.inventory[i] && p.inventory[i].id === itemId && p.inventory[i].count < 64) {
-              const add = Math.min(64 - p.inventory[i].count, count);
-              p.inventory[i].count += add;
-              count -= add;
-              if (count <= 0) break;
-            }
-          }
-        }
-        // 2. 剩餘數量放入第一個空格 (優先快捷欄 0~8，再主背包 9~35)
-        if (count > 0) {
-          for (let i = 0; i < 36; i++) {
-            if (!p.inventory[i]) {
-              p.inventory[i] = { id: itemId, count: count, ...extra };
-              count = 0;
-              break;
-            }
-          }
-        }
-        if (p === localPlayer) {
-          renderInventoryUI();
-          uPHI(p);
-        }
-        return count === 0;
-      }
+const MAX_STACK = 64; // 定義全域堆疊上限
+const UNSTACKABLE_ITEMS = ["sword", "shears", "stick", "minigun", "rpg", "shield"];
 
-      // 計算背包內某物品總數
-      function countItemInInventory(p, itemId) {
-        let total = 0;
-        for (let i = 0; i < 36; i++) {
-          if (p.inventory[i] && p.inventory[i].id === itemId) total += p.inventory[i].count;
-        }
-        return total;
-      }
+function isItemStackable(id) {
+  if (!id) return false;
+  if (UNSTACKABLE_ITEMS.includes(id)) return false;
+  if (id.startsWith("armor_")) return false; // 包含頭盔、胸甲等防具
+  return true;
+}
 
-      // 從背包扣除指定數量的物品
-      function deductItemFromInventory(p, itemId, amount) {
-        for (let i = 0; i < 36; i++) {
-          if (p.inventory[i] && p.inventory[i].id === itemId) {
-            if (p.inventory[i].count > amount) {
-              p.inventory[i].count -= amount;
-              amount = 0;
-              break;
-            } else {
-              amount -= p.inventory[i].count;
-              p.inventory[i] = null;
-              if (amount <= 0) break;
-            }
-          }
-        }
-        if (p === localPlayer) {
-          renderInventoryUI();
-          uPHI(p);
-        }
+function addItemToInventory(p, itemId, count = 1, extra = {}) {
+  const isStackable = isItemStackable(itemId);
+  const toAdd = count;
+  let remaining = count;
+
+  // 1. 若可堆疊，先搜尋已有同類物品且「count < 64」的格子補滿
+  if (isStackable) {
+    for (let i = 0; i < 36; i++) {
+      if (p.inventory[i] && p.inventory[i].id === itemId && p.inventory[i].count < MAX_STACK) {
+        const canAdd = MAX_STACK - p.inventory[i].count;
+        const add = Math.min(canAdd, remaining);
+        p.inventory[i].count += add;
+        remaining -= add;
+        if (remaining <= 0) break;
       }
+    }
+  }
+
+  // 2. 還有剩餘數量（或不可堆疊物品），尋找空格分批放入
+  while (remaining > 0) {
+    let emptySlot = -1;
+    for (let i = 0; i < 36; i++) {
+      if (!p.inventory[i]) {
+        emptySlot = i;
+        break;
+      }
+    }
+
+    if (emptySlot === -1) break; // 背包全滿，中斷
+
+    const putCount = isStackable ? Math.min(MAX_STACK, remaining) : 1;
+    p.inventory[emptySlot] = { id: itemId, count: putCount, ...extra };
+    remaining -= putCount;
+  }
+
+  if (p === localPlayer) {
+    renderInventoryUI();
+    uPHI(p);
+  }
+
+  // 🌟 回傳實際成功塞進去的數量 (0 代表一個都放不下)
+  return toAdd - remaining;
+}
       function renderInventoryUI() {
-        const p = localPlayer;
-        // 1. 裝備欄 4 格 (36~39)
-        for (let i = 0; i < 4; i++) {
-          const el = document.getElementById(`armor-slot-${i}`);
-          const item = p.armorSlots[i];
-          if (el) el.innerHTML = item ? `<img src="${getItemIcon(item)}" />` : "";
-        }
+  const p = localPlayer;
+  // 1. 裝備欄 4 格 (36~39)
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById(`armor-slot-${i}`);
+    const item = p.armorSlots[i];
+    if (el) {
+      el.setAttribute("onmouseenter", `window.setHoveredSlot(${36 + i})`);
+      el.setAttribute("onmouseleave", `window.clearHoveredSlot(${36 + i})`);
+      el.innerHTML = item ? `<img src="${getItemIcon(item)}" />` : "";
+    }
+  }
 
-        // 2. 主背包 27 格 (9~35)
-        const mainGrid = document.getElementById("main-inventory-grid");
-        if (mainGrid) {
-          mainGrid.innerHTML = "";
-          for (let i = 9; i < 36; i++) {
-            const item = p.inventory[i];
-            mainGrid.innerHTML += `
-              <div class="mc-inv-slot" onclick="window.handleSlotClick(${i})">
-                ${item ? `<img src="${getItemIcon(item)}" /><span class="absolute bottom-0.5 right-1 text-[9px] text-white font-bold drop-shadow-[1px_1px_0_#000]">${item.count > 1 ? item.count : ""}</span>` : ""}
-              </div>
-            `;
-          }
-        }
+  // 2. 主背包 27 格 (9~35)
+  const mainGrid = document.getElementById("main-inventory-grid");
+  if (mainGrid) {
+    mainGrid.innerHTML = "";
+    for (let i = 9; i < 36; i++) {
+      const item = p.inventory[i];
+      mainGrid.innerHTML += `
+        <div class="mc-inv-slot" 
+             onmouseenter="window.setHoveredSlot(${i})" 
+             onmouseleave="window.clearHoveredSlot(${i})" 
+             onclick="window.handleSlotClick(${i})">
+          ${item ? `<img src="${getItemIcon(item)}" /><span class="absolute bottom-0.5 right-1 text-[9px] text-white font-bold drop-shadow-[1px_1px_0_#000]">${item.count > 1 ? item.count : ""}</span>` : ""}
+        </div>
+      `;
+    }
+  }
 
-        // 3. 快捷欄 9 格 (0~8)
-        const hotbarGrid = document.getElementById("inventory-hotbar-grid");
-        if (hotbarGrid) {
-          hotbarGrid.innerHTML = "";
-          for (let i = 0; i < 9; i++) {
-            const item = p.inventory[i];
-            hotbarGrid.innerHTML += `
-              <div class="mc-inv-slot ${p.activeSlot === i ? 'outline outline-2 outline-white' : ''}" onclick="window.handleSlotClick(${i})">
-                ${item ? `<img src="${getItemIcon(item)}" /><span class="absolute bottom-0.5 right-1 text-[9px] text-white font-bold drop-shadow-[1px_1px_0_#000]">${item.count > 1 ? item.count : ""}</span>` : ""}
-              </div>
-            `;
-          }
-        }
+  // 3. 快捷欄 9 格 (0~8)
+  const hotbarGrid = document.getElementById("inventory-hotbar-grid");
+  if (hotbarGrid) {
+    hotbarGrid.innerHTML = "";
+    for (let i = 0; i < 9; i++) {
+      const item = p.inventory[i];
+      hotbarGrid.innerHTML += `
+        <div class="mc-inv-slot ${p.activeSlot === i ? 'outline outline-2 outline-white' : ''}" 
+             onmouseenter="window.setHoveredSlot(${i})" 
+             onmouseleave="window.clearHoveredSlot(${i})" 
+             onclick="window.handleSlotClick(${i})">
+          ${item ? `<img src="${getItemIcon(item)}" /><span class="absolute bottom-0.5 right-1 text-[9px] text-white font-bold drop-shadow-[1px_1px_0_#000]">${item.count > 1 ? item.count : ""}</span>` : ""}
+        </div>
+      `;
+    }
+  }
 
-        // 4. 同步主 HUD 底部 9 格與盔甲條
-        renderMainHUDHotbar();
-        updateArmorBar(p);
-      }
+  // 4. 同步主 HUD
+  renderMainHUDHotbar();
+  updateArmorBar(p);
+}
 
       function renderMainHUDHotbar() {
         const ct = document.getElementById("hotbar-slots");
@@ -6122,88 +6529,111 @@ function resetPlayerAllData(p) {
       }
 
       // 🌟 點擊格子處理（左鍵拿起/放下/對調/堆疊，支援 Shift 快速轉移）
-      window.handleSlotClick = function(index) {
-        const p = localPlayer;
-        const isArmor = index >= 36 && index <= 39;
-        const currentItem = isArmor ? p.armorSlots[index - 36] : p.inventory[index];
-        const isShift = window.event && window.event.shiftKey;
+      window.handleSlotClick = function (index) {
+  const p = localPlayer;
+  const isArmor = index >= 36 && index <= 39;
 
-        // 🌟 支援 Shift + 點擊快速轉移
-        if (isShift && currentItem && !heldItem) {
-          const armorMap = { "armor_helmet": 0, "armor_chest": 1, "armor_legs": 2, "armor_boots": 3 };
-          if (armorMap[currentItem.id] !== undefined && !isArmor) {
-            // 是防具且裝備欄是空的，自動穿上
-            const aIdx = armorMap[currentItem.id];
-            if (!p.armorSlots[aIdx]) {
-              p.armorSlots[aIdx] = currentItem;
-              p.inventory[index] = null;
-              renderInventoryUI();
-              uPHI(p);
-              return;
-            }
-          }
-          if (index >= 0 && index <= 8) {
-            // 從快捷欄 (0~8) 移到 主背包 (9~35)
-            for (let i = 9; i < 36; i++) {
-              if (!p.inventory[i]) { p.inventory[i] = currentItem; p.inventory[index] = null; break; }
-            }
-          } else if (index >= 9 && index <= 35) {
-            // 從主背包 (9~35) 移到 快捷欄 (0~8)
-            for (let i = 0; i < 9; i++) {
-              if (!p.inventory[i]) { p.inventory[i] = currentItem; p.inventory[index] = null; break; }
-            }
-          } else if (isArmor) {
-            // 脫下防具回到背包
-            for (let i = 0; i < 36; i++) {
-              if (!p.inventory[i]) { p.inventory[i] = currentItem; p.armorSlots[index - 36] = null; break; }
-            }
-          }
-          renderInventoryUI();
-          uPHI(p);
-          return;
-        }
+  // 🛡️【修復刷盔甲 Bug 1】：床戰防具為永久穿戴，禁止點擊裝備欄脫下防具！
+  if (isArmor && heldItem === null) {
+    return; // 直接攔截，不允許拿下來
+  }
 
-        // 常規拿起 / 放下 / 對調邏輯
-        if (heldItem && isArmor) {
-          const allowed = ["armor_helmet", "armor_chest", "armor_legs", "armor_boots"];
-          if (heldItem.id !== allowed[index - 36]) return; // 部位不符合無法放入
-        }
+  const currentItem = isArmor ? p.armorSlots[index - 36] : p.inventory[index];
+  const isShift = window.event && window.event.shiftKey;
 
-        if (heldItem === null) {
-          if (currentItem) {
-            heldItem = currentItem;
-            if (isArmor) p.armorSlots[index - 36] = null;
-            else p.inventory[index] = null;
-          }
-        } else {
-          if (currentItem === null) {
-            if (isArmor) p.armorSlots[index - 36] = heldItem;
-            else p.inventory[index] = heldItem;
-            heldItem = null;
-          } else if (currentItem.id === heldItem.id && currentItem.count < 64) {
-            const add = Math.min(64 - currentItem.count, heldItem.count);
-            currentItem.count += add;
-            heldItem.count -= add;
-            if (heldItem.count <= 0) heldItem = null;
-          } else {
-            if (!isArmor) {
-              const temp = p.inventory[index];
-              p.inventory[index] = heldItem;
-              heldItem = temp;
-            }
-          }
-        }
-        updateFloatingDragItem();
+  // 🌟 1. Shift + 點擊快速轉移
+  if (isShift && currentItem && !heldItem) {
+    // 🛡️【修復刷盔甲 Bug 2】：禁止 Shift 點擊裝備欄脫下防具
+    if (isArmor) return;
+
+    const armorMap = { "armor_helmet": 0, "armor_chest": 1, "armor_legs": 2, "armor_boots": 3 };
+    if (armorMap[currentItem.id] !== undefined && !isArmor) {
+      const aIdx = armorMap[currentItem.id];
+      if (!p.armorSlots[aIdx]) {
+        p.armorSlots[aIdx] = currentItem;
+        p.inventory[index] = null;
         renderInventoryUI();
         uPHI(p);
-      };
+        return;
+      }
+    }
+
+    const startIdx = (index >= 0 && index <= 8) ? 9 : 0;
+    const endIdx = (index >= 0 && index <= 8) ? 36 : 9;
+
+    if (isItemStackable(currentItem.id)) {
+      for (let i = startIdx; i < endIdx; i++) {
+        if (p.inventory[i] && p.inventory[i].id === currentItem.id && p.inventory[i].count < MAX_STACK) {
+          const canAdd = MAX_STACK - p.inventory[i].count;
+          const add = Math.min(canAdd, currentItem.count);
+          p.inventory[i].count += add;
+          currentItem.count -= add;
+          if (currentItem.count <= 0) break;
+        }
+      }
+    }
+
+    if (currentItem.count > 0) {
+      for (let i = startIdx; i < endIdx; i++) {
+        if (!p.inventory[i]) {
+          p.inventory[i] = currentItem;
+          currentItem.count = 0;
+          break;
+        }
+      }
+    }
+
+    if (currentItem.count <= 0) {
+      p.inventory[index] = null;
+    }
+
+    renderInventoryUI();
+    uPHI(p);
+    return;
+  }
+
+  // 🌟 2. 裝備欄限制
+  if (heldItem && isArmor) {
+    const allowed = ["armor_helmet", "armor_chest", "armor_legs", "armor_boots"];
+    if (heldItem.id !== allowed[index - 36]) return;
+  }
+
+  // 🌟 3. 游標拿起、放下與堆疊判斷
+  if (heldItem === null) {
+    if (currentItem) {
+      heldItem = currentItem;
+      p.inventory[index] = null;
+    }
+  } else {
+    if (currentItem === null) {
+      if (isArmor) p.armorSlots[index - 36] = heldItem;
+      else p.inventory[index] = heldItem;
+      heldItem = null;
+    } else if (currentItem.id === heldItem.id && isItemStackable(currentItem.id) && currentItem.count < MAX_STACK) {
+      const add = Math.min(MAX_STACK - currentItem.count, heldItem.count);
+      currentItem.count += add;
+      heldItem.count -= add;
+      if (heldItem.count <= 0) heldItem = null;
+    } else {
+      if (!isArmor) {
+        const temp = p.inventory[index];
+        p.inventory[index] = heldItem;
+        heldItem = temp;
+      }
+    }
+  }
+
+  updateFloatingDragItem();
+  renderInventoryUI();
+  uPHI(p);
+};
 
       window.addEventListener("mousemove", (e) => {
-        if (!localPlayer.inventoryOpen || !heldItem) return;
-        const el = document.getElementById("floating-drag-item");
-        el.style.left = `${e.clientX}px`;
-        el.style.top = `${e.clientY}px`;
-      });
+    if (!localPlayer.inventoryOpen || !heldItem) return;
+    const el = document.getElementById("floating-drag-item");
+    el.style.left = `${e.clientX}px`;
+    el.style.top = `${e.clientY}px`;
+  });
 
       function updateFloatingDragItem() {
         const el = document.getElementById("floating-drag-item");
@@ -6224,6 +6654,7 @@ function resetPlayerAllData(p) {
         const modal = document.getElementById("inventory-modal");
         localPlayer.inventoryOpen = !localPlayer.inventoryOpen;
         if (localPlayer.inventoryOpen) {
+  if (isHelpOpen) window.toggleHelpMenu();
           if (localPlayer.shopOpen) window.toggleShop();
           if (localPlayer.emotionMenuOpen) window.toggleEmotionMenu();
           document.exitPointerLock();
@@ -6232,18 +6663,13 @@ function resetPlayerAllData(p) {
           initPreview3D();
         } else {
           modal.classList.add("hidden");
+          hoveredSlotIndex = -1;
           if (heldItem) {
-            let placed = false;
-            for (let i = 0; i < 36; i++) {
-              if (!localPlayer.inventory[i]) {
-                localPlayer.inventory[i] = heldItem;
-                placed = true;
-                break;
-              }
-            }
-            if (!placed) {
-              // 背包全滿放不下時，自動以掉落物噴出在玩家腳下
-              sDrp(heldItem.id, heldItem.count, localPlayer.x, localPlayer.y + 0.5, localPlayer.z, 0, 0.2, 0, true);
+            // 🌟 解決複製漏洞：精確扣除放進背包的數量，只把真正放不下的噴到地上！
+            const addedCount = addItemToInventory(localPlayer, heldItem.id, heldItem.count, heldItem);
+            const leftovers = heldItem.count - addedCount;
+            if (leftovers > 0) {
+              sDrp(heldItem.id, leftovers, localPlayer.x, localPlayer.y + 0.5, localPlayer.z, 0, 0.2, 0, true);
             }
             heldItem = null;
             updateFloatingDragItem();
@@ -6335,9 +6761,12 @@ function resetPlayerAllData(p) {
       }
 
 window.restartGame = function () {
+document.getElementById("help-modal").classList.add("hidden"); isHelpOpen = false;
+// ✅ 修改後：加上 s.lastText = "" 重置標記
 SP.forEach((s) => {
   s.maxTime = s.baseMaxTime;
   s.timer = 0;
+  s.lastText = "";
 });
   // 1. 解除滑鼠鎖定
   document.exitPointerLock();
@@ -6370,6 +6799,13 @@ SP.forEach((s) => {
   resetPlayerAllData(P2);
 
   // 5. 重置地圖方塊與渲染網格
+  Object.keys(iM).forEach((key) => {
+    if (iM[key]) {
+      scene.remove(iM[key]);
+      if (iM[key].geometry) iM[key].geometry.dispose();
+    }
+  });
+  iM = {};
   gBWT();
   bVM();
 
