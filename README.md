@@ -9,7 +9,7 @@
 * **2026/8/28:** 🌟提早修理完成連線問題，可以玩了!!! (改用MQTT所以延遲變成100-150ms左右)，幾乎不會影響體驗
 
 ## 🛠️問題回報 / Issues
-👉 **[問題回報區](https://docs.google.com/forms/d/e/1FAIpQLSfnnblyE5C1KKgj6t1L0fM2p0BRHr-eE-HfE4enUVnV9Z205A/viewform?usp=publish-editor)**
+👉 ##[問題回報區](https://docs.google.com/forms/d/e/1FAIpQLSfnnblyE5C1KKgj6t1L0fM2p0BRHr-eE-HfE4enUVnV9Z205A/viewform?usp=publish-editor)**
 
 <br>
 <br>
