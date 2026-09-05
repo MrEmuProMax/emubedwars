@@ -12,8 +12,7 @@
 
 ## 🛠️問題回報 / Issues
 👉 **[問題回報區](https://docs.google.com/forms/d/e/1FAIpQLSfnnblyE5C1KKgj6t1L0fM2p0BRHr-eE-HfE4enUVnV9Z205A/viewform?usp=publish-editor)**
-
-</bv>
+<br>
 ## 🚀 技術棧 / Tech Stack
 * **Frontend:** Vanilla HTML5, Tailwind CSS
 * **3D Engine:** Three.js
