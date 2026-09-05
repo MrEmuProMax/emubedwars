@@ -1,4 +1,4 @@
-# **👉 [點擊立刻玩網頁版 3D 空島床戰：emubedwars - 3D Blocky BedWars](https://emubedwars.vercel.app)**
+# **👉 [點擊玩網頁版 3D 空島床戰：emubedwars - Blocky BedWars](https://emubedwars.vercel.app)**
 
 ## 🎮 遊戲簡介 / Introduction
 這是一款基於HTML開發的 3D 空島床戰 網頁版線上遊戲。玩家不需要下載任何麥塊客戶端，直接展開激烈的空島床戰（Bed Wars）！
