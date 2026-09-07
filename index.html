@@ -264,12 +264,6 @@
         <span class="pixel-font text-[8px] text-[#333] font-bold">主物品欄</span>
         <div id="main-inventory-grid" class="grid grid-cols-9 gap-1"></div>
       </div>
-
-      <!-- 底部：快捷欄 9 格 (1 × 9 矩陣) -->
-      <div class="flex flex-col gap-1">
-        <span class="pixel-font text-[8px] text-[#333] font-bold">快捷欄</span>
-        <div id="inventory-hotbar-grid" class="grid grid-cols-9 gap-1"></div>
-      </div>
     </div>
 
     <!-- 滑鼠拖曳抓取物品浮動層 -->
@@ -399,7 +393,7 @@
           </div>
         </div>
 
-        <div id="conn-status" class="pixel-font text-[9px] text-gray-400 mt-2">狀態: 準備就緒</div>
+        <div id="conn-status" class="pixel-font text-[9px] text-gray-400 mt-2">準備就緒</div>
       </div>
 <!-- 🌟 右下角 GitHub 連結標籤 -->
 <a
@@ -2149,7 +2143,7 @@ function bVM() {
       function triggerStartGame() {
         if (gameSessionStarted) return;
         gameSessionStarted = true;
-        document.getElementById("conn-status").innerText = "狀態: 連線成功！正在進入空島...";
+        document.getElementById("conn-status").innerText = "連線成功！正在進入空島...";
         setTimeout(() => {
           document.getElementById("lobby-screen").classList.add("hidden");
           document.getElementById("hud-container").classList.remove("hidden");
@@ -2188,7 +2182,7 @@ function bVM() {
     });
 
           mqttClient.on("connect", () => {
-            document.getElementById("conn-status").innerText = `狀態: 已連線至 Broker，訂閱房號: ${roomId}`;
+            document.getElementById("conn-status").innerText = `已連線至房間，房號: ${roomId}`;
             mqttClient.subscribe(currentRoomTopic, { qos: 1 }, (err) => {
               if (err) {
                 alert("⚠️ 訂閱房間失敗，請重試！");
@@ -2219,7 +2213,7 @@ function bVM() {
 
           mqttClient.on("error", (err) => {
             console.error("MQTT Error:", err);
-            document.getElementById("conn-status").innerText = "狀態: MQTT 連線錯誤";
+            document.getElementById("conn-status").innerText = "連線錯誤";
           });
         },
 
@@ -2476,7 +2470,7 @@ case "PLAYER_LEAVE":
         const customInput = document.getElementById("custom-room-input").value.trim();
         let roomId = customInput ? customInput.replace(/[^a-zA-Z0-9\-_]/g, "") : "bw-" + Math.floor(1000 + Math.random() * 9000);
 
-        document.getElementById("conn-status").innerText = "正在連線 MQTT Broker 並建立房間...";
+        document.getElementById("conn-status").innerText = "正在連線並建立房間...";
         NetManager.connect(roomId, (id) => {
           document.getElementById("my-peer-id").value = id;
           document.getElementById("host-info").classList.remove("hidden");
@@ -2760,7 +2754,8 @@ freeShop: false,
         // 🌟 背包開啟時的點擊處理
         if (localPlayer.inventoryOpen) {
           const modal = document.getElementById("inventory-modal");
-          if (modal && !modal.contains(e.target)) {
+          const hotbarEl = document.getElementById("hotbar-slots");
+if (modal && !modal.contains(e.target) && (!hotbarEl || !hotbarEl.contains(e.target))) {
             if (heldItem !== null) {
               // 🛡️ 禁止把防具和核心武器丟出背包外
               const protectedItems = ["sword", "minigun", "rpg", "shield"];
@@ -4177,9 +4172,21 @@ else if (id && id.startsWith("armor_")) u = getItemIcon({ id: id, tier: localPla
   sDrp(dropId, dropCount, p.x, p.y + 1.2, p.z, dx * 0.3, 0.2 + dy * 0.2, dz * 0.3, true);
 }
 function hDD(p) {
-        if (!p.inventory) return;
-        const keepItems = ["sword", "minigun", "rpg", "shield"];
-        const dropsBatch = []; // 📦 用來打包所有掉落物
+  if (!p.inventory) return;
+
+  // 🌟 每次死掉劍降一級（最低降至木劍 0）
+  p.swordLevel = Math.max(0, p.swordLevel - 1);
+  for (let i = 0; i < 36; i++) {
+    if (p.inventory[i] && p.inventory[i].id === "sword") {
+      p.inventory[i].swordLevel = p.swordLevel;
+    }
+  }
+  if (heldItem && heldItem.id === "sword") {
+    heldItem.swordLevel = p.swordLevel;
+  }
+
+  const keepItems = ["sword", "minigun", "rpg", "shield"];
+  const dropsBatch = []; // 📦 用來打包所有掉落物
 
         for (let i = 0; i < 36; i++) {
           const it = p.inventory[i];
@@ -6491,42 +6498,35 @@ function addItemToInventory(p, itemId, count = 1, extra = {}) {
     }
   }
 
-  // 3. 快捷欄 9 格 (0~8)
-  const hotbarGrid = document.getElementById("inventory-hotbar-grid");
-  if (hotbarGrid) {
-    hotbarGrid.innerHTML = "";
-    for (let i = 0; i < 9; i++) {
-      const item = p.inventory[i];
-      hotbarGrid.innerHTML += `
-        <div class="mc-inv-slot ${p.activeSlot === i ? 'outline outline-2 outline-white' : ''}" 
-             onmouseenter="window.setHoveredSlot(${i})" 
-             onmouseleave="window.clearHoveredSlot(${i})" 
-             onclick="window.handleSlotClick(${i})">
-          ${item ? `<img src="${getItemIcon(item)}" /><span class="absolute bottom-0.5 right-1 text-[9px] text-white font-bold drop-shadow-[1px_1px_0_#000]">${item.count > 1 ? item.count : ""}</span>` : ""}
-        </div>
-      `;
-    }
-  }
-
   // 4. 同步主 HUD
   renderMainHUDHotbar();
   updateArmorBar(p);
 }
 
+window.handleHotbarClick = function (index) {
+  // 只有開背包（有滑鼠游標）時，才允許點擊拖移物品
+  if (localPlayer.inventoryOpen) {
+    window.handleSlotClick(index);
+  }
+};
+
       function renderMainHUDHotbar() {
-        const ct = document.getElementById("hotbar-slots");
-        if (!ct) return;
-        ct.innerHTML = "";
-        for (let i = 0; i < 9; i++) {
-          const item = localPlayer.inventory[i];
-          ct.innerHTML += `
-            <div class="w-10 h-10 mc-slot flex items-center justify-center relative ${localPlayer.activeSlot === i ? 'active' : ''}">
-              ${item ? `<img src="${getItemIcon(item)}" class="w-7 h-7 object-contain select-none" style="image-rendering:pixelated;" />` : ""}
-              ${item && item.count > 1 ? `<div class="absolute bottom-0.5 right-1 text-[11px] text-white font-bold drop-shadow-[1px_1px_0_#000]">${item.count}</div>` : ""}
-            </div>
-          `;
-        }
-      }
+  const ct = document.getElementById("hotbar-slots");
+  if (!ct) return;
+  ct.innerHTML = "";
+  for (let i = 0; i < 9; i++) {
+    const item = localPlayer.inventory[i];
+    ct.innerHTML += `
+      <div class="w-10 h-10 mc-slot flex items-center justify-center relative cursor-pointer ${localPlayer.activeSlot === i ? 'active' : ''}"
+           onmouseenter="window.setHoveredSlot(${i})"
+           onmouseleave="window.clearHoveredSlot(${i})"
+           onclick="window.handleHotbarClick(${i})">
+        ${item ? `<img src="${getItemIcon(item)}" class="w-7 h-7 object-contain select-none" style="image-rendering:pixelated;" />` : ""}
+        ${item && item.count > 1 ? `<div class="absolute bottom-0.5 right-1 text-[11px] text-white font-bold drop-shadow-[1px_1px_0_#000]">${item.count}</div>` : ""}
+      </div>
+    `;
+  }
+}
 
       // 🌟 點擊格子處理（左鍵拿起/放下/對調/堆疊，支援 Shift 快速轉移）
       window.handleSlotClick = function (index) {
@@ -6543,7 +6543,7 @@ function addItemToInventory(p, itemId, count = 1, extra = {}) {
 
   // 🌟 1. Shift + 點擊快速轉移
   if (isShift && currentItem && !heldItem) {
-    // 🛡️【修復刷盔甲 Bug 2】：禁止 Shift 點擊裝備欄脫下防具
+    // 🛡️ 禁止 Shift 點擊裝備欄脫下防具
     if (isArmor) return;
 
     const armorMap = { "armor_helmet": 0, "armor_chest": 1, "armor_legs": 2, "armor_boots": 3 };
@@ -6561,6 +6561,7 @@ function addItemToInventory(p, itemId, count = 1, extra = {}) {
     const startIdx = (index >= 0 && index <= 8) ? 9 : 0;
     const endIdx = (index >= 0 && index <= 8) ? 36 : 9;
 
+    // 若為可堆疊物品，先嘗試合併進既有格子
     if (isItemStackable(currentItem.id)) {
       for (let i = startIdx; i < endIdx; i++) {
         if (p.inventory[i] && p.inventory[i].id === currentItem.id && p.inventory[i].count < MAX_STACK) {
@@ -6573,10 +6574,11 @@ function addItemToInventory(p, itemId, count = 1, extra = {}) {
       }
     }
 
+    // 移入第一個空格（使用 { ...currentItem } 淺拷貝物件，保留 count 數量）
     if (currentItem.count > 0) {
       for (let i = startIdx; i < endIdx; i++) {
         if (!p.inventory[i]) {
-          p.inventory[i] = currentItem;
+          p.inventory[i] = { ...currentItem };
           currentItem.count = 0;
           break;
         }
@@ -6668,9 +6670,10 @@ function addItemToInventory(p, itemId, count = 1, extra = {}) {
             // 🌟 解決複製漏洞：精確扣除放進背包的數量，只把真正放不下的噴到地上！
             const addedCount = addItemToInventory(localPlayer, heldItem.id, heldItem.count, heldItem);
             const leftovers = heldItem.count - addedCount;
-            if (leftovers > 0) {
-              sDrp(heldItem.id, leftovers, localPlayer.x, localPlayer.y + 0.5, localPlayer.z, 0, 0.2, 0, true);
-            }
+const protectedItems = ["sword", "minigun", "rpg", "shield"];
+if (leftovers > 0 && !heldItem.id.startsWith("armor_") && !protectedItems.includes(heldItem.id)) {
+  sDrp(heldItem.id, leftovers, localPlayer.x, localPlayer.y + 0.5, localPlayer.z, 0, 0.2, 0, true);
+}
             heldItem = null;
             updateFloatingDragItem();
           }
@@ -6822,7 +6825,7 @@ SP.forEach((s) => {
   lobby.classList.remove("hidden");
   
   // 7. 重置大廳按鈕與狀態
-  document.getElementById("conn-status").innerText = "狀態: 準備就緒";
+  document.getElementById("conn-status").innerText = "準備就緒";
   const joinBtn = document.getElementById("btn-join-room");
   if (joinBtn) {
     joinBtn.disabled = false;
