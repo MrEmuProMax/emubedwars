@@ -1148,7 +1148,17 @@ stick: makeSvgIcon(`
     <rect x="7" y="5.5" width="2" height="2" fill="#57606a"/>
   `),
 
-  // 圓瓶藥水 (圓形燒瓶底、木塞、玻璃瓶頸與弧形液面)
+  // 圓瓶藥水產生器 (根據顏色繪製不同藥水)
+  makePotion: (base, dark, light) => makeSvgIcon(`
+    <rect x="7" y="1" width="2" height="2" fill="#8d6e63"/>
+    <rect x="6" y="3" width="4" height="1" fill="#b0bec5"/>
+    <rect x="7" y="4" width="2" height="2" fill="#cfd8dc"/>
+    <circle cx="8" cy="10" r="5" fill="#eceff1"/>
+    <circle cx="8" cy="10" r="4" fill="${base}"/>
+    <path d="M4 10a4 4 0 0 0 8 0z" fill="${dark}"/>
+    <rect x="5" y="8" width="2" height="2" fill="${light}"/>
+    <rect x="5" y="7" width="1" height="3" fill="#ffffff" opacity="0.6"/>
+  `),
   potion: makeSvgIcon(`
     <rect x="7" y="1" width="2" height="2" fill="#8d6e63"/>
     <rect x="6" y="3" width="4" height="1" fill="#b0bec5"/>
@@ -1201,6 +1211,10 @@ stick: makeSvgIcon(`
     <path d="M4 12h8v2H4z" fill="#00838f"/>
   `)
 };
+
+MA.invis_potion = MA.makePotion("#9c27b0", "#7b1fa2", "#ba68c8"); // 🟣 隱形 (紫)
+MA.jump_potion  = MA.makePotion("#fbc02d", "#f57f17", "#fff176"); // 🟡 跳躍 (黃)
+MA.speed_potion = MA.makePotion("#0288d1", "#01579b", "#4fc3f7"); // 🔵 速度 (藍)
       const EM = [
         { id: "victory_dance", name: "休息姿態", desc: "坐下或躺下休息" },
         { id: "spinning_tease", name: "陀螺旋轉", desc: "快速旋轉嘲諷" },
@@ -6372,28 +6386,34 @@ window.clearHoveredSlot = function (index) {
       let heldItem = null;
 
       function getItemIcon(item) {
-        if (!item) return "";
-        if (item.id === "sword") return getSwordIcon(item.swordLevel !== undefined ? item.swordLevel : localPlayer.swordLevel);
-        if (item.id === "wool") return localPlayer.id === "emu" ? MA.blue_wool : MA.orange_wool;
-        if (item.id === "minigun") return MA.minigun;
-        if (item.id === "rpg") return MA.rpg;
-        if (item.id === "shield") return MA.shield; // 👈 確保直接讀取盾牌圖示
-        
-        // 🌟 根據防具階級（Tier 1/2 鐵白銀色，Tier 3 鑽石青色）動態生成對應顏色圖示
-        if (item.id && item.id.startsWith("armor_")) {
-          const tier = item.tier !== undefined ? item.tier : localPlayer.armorLevel;
-          const palette = (tier === 1 || tier === 2) ? IRON_ARMOR_PALETTE : DIAMOND_ARMOR_PALETTE;
-          const map = {
-            "armor_helmet": PIXEL_MAP_HELMET,
-            "armor_chest":  PIXEL_MAP_CHESTPLATE,
-            "armor_legs":   PIXEL_MAP_LEGGINGS,
-            "armor_boots":  PIXEL_MAP_BOOTS
-          }[item.id];
-          if (map) return makePixelArmorSvg(map, palette);
-        }
+  if (!item) return "";
+  if (item.id === "sword") return getSwordIcon(item.swordLevel !== undefined ? item.swordLevel : localPlayer.swordLevel);
+  if (item.id === "wool") return localPlayer.id === "emu" ? MA.blue_wool : MA.orange_wool;
+  if (item.id === "minigun") return MA.minigun;
+  if (item.id === "rpg") return MA.rpg;
+  if (item.id === "shield") return MA.shield;
+  
+  // 🌟 藥水各別對應圖示（若沒有對應就使用預設藥水瓶）
+  if (item.id === "invis_potion") return MA.invis_potion || MA.potion;
+  if (item.id === "jump_potion") return MA.jump_potion || MA.potion;
+  if (item.id === "speed_potion") return MA.speed_potion || MA.potion;
+  if (item.id.endsWith("_potion")) return MA.potion;
+  
+  // 🌟 根據防具階級動態生成對應顏色圖示
+  if (item.id && item.id.startsWith("armor_")) {
+    const tier = item.tier !== undefined ? item.tier : localPlayer.armorLevel;
+    const palette = (tier === 1 || tier === 2) ? IRON_ARMOR_PALETTE : DIAMOND_ARMOR_PALETTE;
+    const map = {
+      "armor_helmet": PIXEL_MAP_HELMET,
+      "armor_chest":  PIXEL_MAP_CHESTPLATE,
+      "armor_legs":   PIXEL_MAP_LEGGINGS,
+      "armor_boots":  PIXEL_MAP_BOOTS
+    }[item.id];
+    if (map) return makePixelArmorSvg(map, palette);
+  }
 
-        return MA[item.id] || MA.iron;
-      }
+  return MA[item.id] || MA.iron;
+}
 
       // 🌟 每個裝備提供 1/4 階級防禦力，即時繪製 HUD 原版胸甲防禦條
       function updateArmorBar(p) {
