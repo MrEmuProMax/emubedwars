@@ -603,7 +603,8 @@ let isChatOpen = false;
           rS();
           return true;
         } else if (c === "/sniper") {
-          localPlayer.hasSniper = !localPlayer.hasSniper;
+          localPlayer.canSniper = !localPlayer.canSniper; // 切換自瞄解鎖權限
+          localPlayer.hasSniper = localPlayer.canSniper;   // 🌟 解鎖當下直接開啟！(右上角立刻亮 BUFF)
           return true;
         }
 
@@ -2943,6 +2944,14 @@ if (e.code === "Space" && localPlayer.canFly && !e.repeat && !ky["Space"]) {
         if (e.code === "KeyZ" && !ky[e.code] && !localPlayer.isDead) {
           ky[e.code] = true;
           window.toggleEmotionMenu();
+          return;
+        }
+// 🌟 按 F 鍵開關自瞄（必須先輸入過 /sniper 解鎖）
+        if (e.code === "KeyF" && !ky[e.code] && !localPlayer.isDead && !isChatOpen) {
+          ky[e.code] = true;
+          if (localPlayer.canSniper) {
+            localPlayer.hasSniper = !localPlayer.hasSniper; // 按一下開，再按一下關
+          }
           return;
         }
 
@@ -5667,7 +5676,6 @@ const isGunOrShield = curHeld && (curHeld.id === "minigun" || curHeld.id === "rp
         if (!ct) return;
         let html = "";
         if (p.isFlying) html += `<div class="bg-black/60 border border-yellow-400/40 px-2 py-1 rounded text-yellow-300 pixel-font text-[8px]">🚀 飛行中</div>`;
-        // 🌟 加在這一行：自瞄狀態提示
         if (p.hasSniper) html += `<div class="bg-black/60 border border-red-500/40 px-2 py-1 rounded text-red-400 pixel-font text-[8px]">🎯 自瞄鎖定 [F]</div>`;
         // 🌟 順便加入：如果開啟了免費商店，右上角也會顯示提示
         if (p.freeShop) html += `<div class="bg-black/60 border border-emerald-500/40 px-2 py-1 rounded text-emerald-300 pixel-font text-[8px]">💰 商店免費中</div>`;
@@ -5858,8 +5866,8 @@ const isGunOrShield = curHeld && (curHeld.id === "minigun" || curHeld.id === "rp
         const now = performance.now();
         const dt = Math.min((now - lTm) / 1000, 0.1);
         lTm = now;
-// 當啟動 /sniper 且按住 F 鍵時，每幀自動對齊對手位置
-if (ky["KeyF"] && localPlayer.hasSniper && !isChatOpen && !localPlayer.isDead) {
+// 🌟 只要按 F 開啟了自瞄，每幀自動鎖定
+if (localPlayer.hasSniper && !isChatOpen && !localPlayer.isDead) {
   lockAimToOpponent();
 }
         // 🌟 Minigun 連發邏輯 (修正：命中地面與牆面不穿透、產生撞擊火花、不被方塊遮擋)
@@ -6397,6 +6405,7 @@ function resetPlayerAllData(p) {
   p.hasMinigun = false;
   p.hasRPG = false;
 p.hasSniper = false;
+  p.canSniper = false;
   p.freeShop = false;
 p.canFly = false;
   p.isAdmin = false;
