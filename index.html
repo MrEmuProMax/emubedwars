@@ -457,6 +457,33 @@ const ADMIN_PASSWORD = "MrEmu"; // 👈 在這裡改密碼！
           life: maxLife
         });
       }
+function lockAimToOpponent() {
+  if (!remotePlayer || remotePlayer.isDead || !localPlayer.hasSniper) return;
+
+  const eyeY = localPlayer.y + (localPlayer.isSneaking ? 1.0 : 1.3);
+  const targetY = remotePlayer.y + 0.7; // 對手身體中心
+
+  const dx = remotePlayer.x - localPlayer.x;
+  const dy = targetY - eyeY;
+  const dz = remotePlayer.z - localPlayer.z;
+
+  const horizontalDist = Math.hypot(dx, dz);
+  if (horizontalDist < 0.001) return;
+
+  // 計算 Yaw 與 Pitch
+  localPlayer.yaw = Math.atan2(dx, dz);
+  localPlayer.pitch = Math.atan2(dy, horizontalDist);
+
+  // 限制 pitch 範圍防止穿景破圖
+  localPlayer.pitch = Math.max(-Math.PI / 2.05, Math.min(Math.PI / 2.05, localPlayer.pitch));
+
+  if (localPlayer.mesh) {
+    localPlayer.mesh.rotation.y = localPlayer.yaw;
+  }
+  
+  // 🌟 立即更新攝影機角度，確保當前幀按下攻擊時射線 100% 正中目標
+  uCam();
+}
 /* --- RPG 火箭彈實體與粒子軌跡 --- */
       const aRPG = [];
 
@@ -574,6 +601,9 @@ let isChatOpen = false;
         } else if (c === "/free_shop") {
           localPlayer.freeShop = !localPlayer.freeShop;
           rS();
+          return true;
+        } else if (c === "/sniper") {
+          localPlayer.hasSniper = !localPlayer.hasSniper;
           return true;
         }
 
@@ -2447,6 +2477,12 @@ case "DOOR_BREAK":
                 }
               });
               break;
+// 🌟 關鍵修復：接收對手購買的陷阱
+            case "TRAP_BUY":
+              if (remotePlayer) {
+                remotePlayer.teamTraps.push(msg.trapId);
+              }
+              break;
             case "TRAP_TRIGGERED":
               AE.play("alarm");
               if (localPlayer.teamTraps.length > 0) {
@@ -2552,6 +2588,7 @@ isAdmin: false,
         minigunLastFire: 0,
         hasRPG: false,
         rpgCooldown: 0,
+hasSniper: false,
         x: 65.5,
         y: 14.1,
         z: 19.5,
@@ -2643,6 +2680,7 @@ isAdmin: false,
         minigunLastFire: 0,
         hasRPG: false,
         rpgCooldown: 0,
+hasSniper: false,
         x: 65.5,
         y: 14.1,
         z: 111.5,
@@ -2827,7 +2865,7 @@ if (modal && !modal.contains(e.target) && (!hotbarEl || !hotbarEl.contains(e.tar
         uPHI(localPlayer);
       });
 
-      const allowedKeys = ["KeyW", "KeyA", "KeyS", "KeyD", "Space", "KeyC", "KeyQ", "KeyB", "KeyZ", "KeyX", "KeyT", "KeyO", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9"];
+      const allowedKeys = ["KeyW", "KeyA", "KeyS", "KeyD", "KeyF", "Space", "KeyC", "KeyQ", "KeyB", "KeyZ", "KeyX", "KeyT", "KeyO", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9"];
 
       window.addEventListener("keydown", (e) => {
   if (!gameSessionStarted) return;
@@ -3403,8 +3441,10 @@ if (e.code === "Space" && localPlayer.canFly && !e.repeat && !ky["Space"]) {
                   <span>${it.name}</span>
                 </span>
                 <span class="flex items-center gap-1 font-bold">
-                  <img src="${it.currencyIcon}" class="w-4 h-4" style="image-rendering:pixelated;" />
-                  <span>x${it.cost}</span>
+                  ${localPlayer.freeShop 
+                    ? `<span class="text-emerald-700 font-bold">免費 FREE</span>` 
+                    : `<img src="${it.currencyIcon}" class="w-4 h-4" style="image-rendering:pixelated;" /><span>x${it.cost}</span>`
+                  }
                 </span>
               `;
             }
@@ -3430,8 +3470,10 @@ if (e.code === "Space" && localPlayer.canFly && !e.repeat && !ky["Space"]) {
                     ? `<span class="text-green-700 font-bold">MAX</span>`
                     : `
                   <span class="flex items-center gap-1 font-bold">
-                    <img src="${MA.diamond}" class="w-4 h-4" style="image-rendering:pixelated;" />
-                    <span>x${u.cost}</span>
+                    ${localPlayer.freeShop 
+                      ? `<span class="text-emerald-700 font-bold">免費 FREE</span>`
+                      : `<img src="${MA.diamond}" class="w-4 h-4" style="image-rendering:pixelated;" /><span>x${u.cost}</span>`
+                    }
                   </span>
                 `
                 }
@@ -3453,8 +3495,10 @@ if (e.code === "Space" && localPlayer.canFly && !e.repeat && !ky["Space"]) {
                     ? `<span class="text-red-600 font-bold">已滿(3)</span>`
                     : `
                   <span class="flex items-center gap-1 font-bold">
-                    <img src="${MA.diamond}" class="w-4 h-4" style="image-rendering:pixelated;" />
-                    <span>x${t.cost}</span>
+                    ${localPlayer.freeShop 
+                      ? `<span class="text-emerald-700 font-bold">免費 FREE</span>`
+                      : `<img src="${MA.diamond}" class="w-4 h-4" style="image-rendering:pixelated;" /><span>x${u.cost}</span>`
+                    }
                   </span>
                 `
                 }
@@ -3625,6 +3669,8 @@ window.buyTrapByIndex = function (idx) {
   if (localPlayer.freeShop || userDiamonds >= t.cost) {
     if (!localPlayer.freeShop) deductItemFromInventory(localPlayer, "diamond", t.cost);
     localPlayer.teamTraps.push(t.id);
+// 🌟 關鍵修復：通知對手電腦「我方基地設置了陷阱」
+    NetManager.send({ type: "TRAP_BUY", trapId: t.id }, 1);
     renderInventoryUI();
     uHUD();
     rS();
@@ -5621,6 +5667,10 @@ const isGunOrShield = curHeld && (curHeld.id === "minigun" || curHeld.id === "rp
         if (!ct) return;
         let html = "";
         if (p.isFlying) html += `<div class="bg-black/60 border border-yellow-400/40 px-2 py-1 rounded text-yellow-300 pixel-font text-[8px]">🚀 飛行中</div>`;
+        // 🌟 加在這一行：自瞄狀態提示
+        if (p.hasSniper) html += `<div class="bg-black/60 border border-red-500/40 px-2 py-1 rounded text-red-400 pixel-font text-[8px]">🎯 自瞄鎖定 [F]</div>`;
+        // 🌟 順便加入：如果開啟了免費商店，右上角也會顯示提示
+        if (p.freeShop) html += `<div class="bg-black/60 border border-emerald-500/40 px-2 py-1 rounded text-emerald-300 pixel-font text-[8px]">💰 商店免費中</div>`;
         if (p.speedBoostTimer > 0) html += `<div class="bg-black/60 border border-blue-400/40 px-2 py-1 rounded text-blue-300 pixel-font text-[8px]">⚡ 速度: ${p.speedBoostTimer.toFixed(1)}s</div>`;
         if (p.jumpBoostTimer > 0) html += `<div class="bg-black/60 border border-yellow-400/40 px-2 py-1 rounded text-yellow-300 pixel-font text-[8px]">🦘 跳躍: ${p.jumpBoostTimer.toFixed(1)}s</div>`;
         if (p.invisTimer > 0) html += `<div class="bg-black/60 border border-purple-400/40 px-2 py-1 rounded text-purple-300 pixel-font text-[8px]">👻 隱形: ${p.invisTimer.toFixed(1)}s</div>`;
@@ -5808,7 +5858,10 @@ const isGunOrShield = curHeld && (curHeld.id === "minigun" || curHeld.id === "rp
         const now = performance.now();
         const dt = Math.min((now - lTm) / 1000, 0.1);
         lTm = now;
-
+// 當啟動 /sniper 且按住 F 鍵時，每幀自動對齊對手位置
+if (ky["KeyF"] && localPlayer.hasSniper && !isChatOpen && !localPlayer.isDead) {
+  lockAimToOpponent();
+}
         // 🌟 Minigun 連發邏輯 (修正：命中地面與牆面不穿透、產生撞擊火花、不被方塊遮擋)
         const heldCur = localPlayer.inventory ? localPlayer.inventory[localPlayer.activeSlot] : null;
 if (heldCur && heldCur.id === "minigun" && isLMBDown && !isChatOpen && !localPlayer.isDead) {
@@ -6343,6 +6396,7 @@ function resetPlayerAllData(p) {
   p.hasShield = false;
   p.hasMinigun = false;
   p.hasRPG = false;
+p.hasSniper = false;
   p.freeShop = false;
 p.canFly = false;
   p.isAdmin = false;
