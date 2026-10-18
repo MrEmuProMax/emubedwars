@@ -3976,12 +3976,12 @@ const kbs = held && held.id === "stick" ? 31.5 : 10.5;
       sB(tg.x, topY, tg.z, 0);
       AE.play("dig");
       cBP(tg.x + 0.5, tg.y + 0.5, tg.z + 0.5, 0x8d6e63);
-      NetManager.send({ type: "DOOR_BREAK", x: tg.x, botY: botY, topY: topY, z: tg.z });
+      NetManager.send({ type: "DOOR_BREAK", x: tg.x, botY: botY, topY: topY, z: tg.z }, 1);
     } else {
       sB(tg.x, tg.y, tg.z, 0);
       AE.play("dig");
       cBP(tg.x + 0.5, tg.y + 0.5, tg.z + 0.5, BT[bt] ? BT[bt].color : 0x555555);
-      NetManager.send({ type: "BLOCK_BREAK", x: tg.x, y: tg.y, z: tg.z });
+      NetManager.send({ type: "BLOCK_BREAK", x: tg.x, y: tg.y, z: tg.z }, 1);
 
       // 挖破羊毛噴出掉落物
       if (bt === 7 || bt === 8) {
@@ -4024,7 +4024,7 @@ const kbs = held && held.id === "stick" ? 31.5 : 10.5;
           sB(tg.x, topY, tg.z, topVal);
           bVM();
           AE.play("place");
-          NetManager.send({ type: "DOOR_TOGGLE", x: tg.x, botY: botY, topY: topY, botVal: botVal, topVal: topVal });
+          NetManager.send({ type: "DOOR_TOGGLE", x: tg.x, botY: botY, topY: topY, botVal: botVal, topVal: topVal }, 1);
           localPlayer.actionCooldown = 6;
           return;
         }
@@ -4047,7 +4047,7 @@ const kbs = held && held.id === "stick" ? 31.5 : 10.5;
             if (held.count <= 0) localPlayer.inventory[localPlayer.activeSlot] = null;
             renderInventoryUI();
             uPHI(localPlayer);
-            NetManager.send({ type: "BLOCK_PLACE", x: px, y: py, z: pz, btp: btp });
+            NetManager.send({ type: "BLOCK_PLACE", x: px, y: py, z: pz, btp: btp }, 1);
           }
           return;
         }
@@ -4404,7 +4404,8 @@ function hDD(p) {
 
       function xFB(fb) {
         if (fb.owner !== localPlayer) return;
-        NetManager.send({ type: "FIREBALL_EXPLODE", fbId: fb.id, x: fb.x, y: fb.y, z: fb.z });
+        // 🌟 1. 火球爆炸特效與聲音加上 QoS 1
+        NetManager.send({ type: "FIREBALL_EXPLODE", fbId: fb.id, x: fb.x, y: fb.y, z: fb.z }, 1);
 
         const tx = Math.floor(fb.x), ty = Math.floor(fb.y), tz = Math.floor(fb.z), r = 1.8;
         let bd = false;
@@ -4418,7 +4419,10 @@ function hDD(p) {
                 if (bt > 0 && !protectedBlocks.includes(bt)) {
                   sB(bx, by, bz, 0);
                   bd = true;
-                  if (fb.owner === localPlayer) NetManager.send({ type: "BLOCK_BREAK", x: bx, y: by, z: bz, isExplosion: true });
+                  // 🌟 2. 火球炸毀的每顆方塊加上 QoS 1，絕不殘留浮空幽靈方塊
+                  if (fb.owner === localPlayer) {
+                    NetManager.send({ type: "BLOCK_BREAK", x: bx, y: by, z: bz, isExplosion: true }, 1);
+                  }
                 }
               }
             }
@@ -4430,7 +4434,6 @@ function hDD(p) {
 
         const blastRadius = r + 2.0;
 
-        // 🌟 關鍵修復：計算對手 (remotePlayer) 的火球爆炸傷害與擊退
         if (remotePlayer && !remotePlayer.isDead) {
           const dEnemy = Math.hypot(remotePlayer.x - fb.x, (remotePlayer.y + 0.7) - fb.y, remotePlayer.z - fb.z);
           if (dEnemy <= blastRadius) {
@@ -4444,6 +4447,7 @@ function hDD(p) {
             remotePlayer.isHurt = 0.2;
             aDmg(remotePlayer, dmg, localPlayer, true);
 
+            // 🌟 3. 火球爆炸傷害與擊退加上 QoS 1
             NetManager.send({
               type: "DAMAGE_TAKEN",
               amount: dmg,
@@ -4452,25 +4456,24 @@ function hDD(p) {
               kbY: kbY,
               isCrit: false,
               ignoreIFrame: true
-            });
+            }, 1);
 
             cBP(remotePlayer.x, remotePlayer.y + 0.7, remotePlayer.z, 0xff1744);
           }
         }
 
-        // 🌟 自傷與火球跳躍判定
-if (!localPlayer.isDead) {
-  const d = Math.hypot(localPlayer.x - fb.x, (localPlayer.y + 0.7) - fb.y, localPlayer.z - fb.z);
-  if (d <= blastRadius) {
-    let dmg = Math.max(10, Math.floor((1.0 - d / blastRadius) * 35));
-    aDmg(localPlayer, dmg, fb.owner);
-    const a = Math.atan2(localPlayer.x - fb.x, localPlayer.z - fb.z);
-    const f = (1.0 - d / blastRadius) * 1.2;
-    localPlayer.vx += Math.sin(a) * f * 10;
-    localPlayer.vz += Math.cos(a) * f * 10;
-    localPlayer.vy += f * 0.4 + 0.35;
-  }
-}
+        if (!localPlayer.isDead) {
+          const d = Math.hypot(localPlayer.x - fb.x, (localPlayer.y + 0.7) - fb.y, localPlayer.z - fb.z);
+          if (d <= blastRadius) {
+            let dmg = Math.max(10, Math.floor((1.0 - d / blastRadius) * 35));
+            aDmg(localPlayer, dmg, fb.owner);
+            const a = Math.atan2(localPlayer.x - fb.x, localPlayer.z - fb.z);
+            const f = (1.0 - d / blastRadius) * 1.2;
+            localPlayer.vx += Math.sin(a) * f * 10;
+            localPlayer.vz += Math.cos(a) * f * 10;
+            localPlayer.vy += f * 0.4 + 0.35;
+          }
+        }
       }
       // 🌟 Minecraft 原版月牙形衝擊波與像素白煙團生成
       function getMCCrescentTexture() {
@@ -4530,105 +4533,106 @@ if (!localPlayer.isDead) {
       }
 
       function xRPG(rpg) {
-  if (rpg.owner !== localPlayer) return;
+        if (rpg.owner !== localPlayer) return;
 
-  const expX = rpg.x;
-  const expY = rpg.y;
-  const expZ = rpg.z;
+        const expX = rpg.x;
+        const expY = rpg.y;
+        const expZ = rpg.z;
 
-  const tx = Math.floor(expX), ty = Math.floor(expY), tz = Math.floor(expZ), r = 3;
-  let bd = false;
-  const protectedBlocks = [6, 9, 12, 22, 23];
-  const brokenBlocks = []; // 🌟 打包清單
+        const tx = Math.floor(expX), ty = Math.floor(expY), tz = Math.floor(expZ), r = 3;
+        let bd = false;
+        const protectedBlocks = [6, 9, 12, 22, 23];
+        const brokenBlocks = [];
 
-  for (let dx = -r; dx <= r; dx++) {
-    for (let dy = -r; dy <= r; dy++) {
-      for (let dz = -r; dz <= r; dz++) {
-        if (Math.hypot(dx, dy, dz) <= r) {
-          const bx = tx + dx, by = ty + dy, bz = tz + dz;
-          const bt = gB(bx, by, bz);
+        for (let dx = -r; dx <= r; dx++) {
+          for (let dy = -r; dy <= r; dy++) {
+            for (let dz = -r; dz <= r; dz++) {
+              if (Math.hypot(dx, dy, dz) <= r) {
+                const bx = tx + dx, by = ty + dy, bz = tz + dz;
+                const bt = gB(bx, by, bz);
 
-          if ((bt === 10 || bt === 20) && rpg.owner && rpg.owner.id !== "emu") {
-            sB(65, 13, 25, 0); sB(65, 13, 24, 0);
-            P1.bedAlive = false; bd = true;
-            AE.play("bed_break");
-            cBP(65.5, 13.3, 24.5, 0x2962ff);
-            NetManager.send({ type: "BED_DESTROY", team: "emu" });
-            uHUD();
-          } else if ((bt === 11 || bt === 21) && rpg.owner && rpg.owner.id !== "wombat") {
-            sB(65, 13, 105, 0); sB(65, 13, 106, 0);
-            P2.bedAlive = false; bd = true;
-            AE.play("bed_break");
-            cBP(65.5, 13.3, 105.5, 0xff6d00);
-            NetManager.send({ type: "BED_DESTROY", team: "wombat" });
-            uHUD();
-          } else if (bt > 0 && !protectedBlocks.includes(bt) && bt !== 10 && bt !== 20 && bt !== 11 && bt !== 21) {
-            sB(bx, by, bz, 0);
-            brokenBlocks.push({ x: bx, y: by, z: bz });
-            bd = true;
+                if ((bt === 10 || bt === 20) && rpg.owner && rpg.owner.id !== "emu") {
+                  sB(65, 13, 25, 0); sB(65, 13, 24, 0);
+                  P1.bedAlive = false; bd = true;
+                  AE.play("bed_break");
+                  cBP(65.5, 13.3, 24.5, 0x2962ff);
+                  NetManager.send({ type: "BED_DESTROY", team: "emu" }, 1);
+                  uHUD();
+                } else if ((bt === 11 || bt === 21) && rpg.owner && rpg.owner.id !== "wombat") {
+                  sB(65, 13, 105, 0); sB(65, 13, 106, 0);
+                  P2.bedAlive = false; bd = true;
+                  AE.play("bed_break");
+                  cBP(65.5, 13.3, 105.5, 0xff6d00);
+                  NetManager.send({ type: "BED_DESTROY", team: "wombat" }, 1);
+                  uHUD();
+                } else if (bt > 0 && !protectedBlocks.includes(bt) && bt !== 10 && bt !== 20 && bt !== 11 && bt !== 21) {
+                  sB(bx, by, bz, 0);
+                  brokenBlocks.push({ x: bx, y: by, z: bz });
+                  bd = true;
+                }
+              }
+            }
           }
         }
+
+        // 🌟 1. RPG 整包方塊打包清單加上 QoS 1
+        NetManager.send({ 
+          type: "RPG_EXPLODE", 
+          rpgId: rpg.id, 
+          x: expX, 
+          y: expY, 
+          z: expZ,
+          blocks: brokenBlocks 
+        }, 1);
+
+        if (bd) bVM();
+        cMCExplosion(expX, expY, expZ);
+        AE.play("tnt_explode");
+
+        const blastRadius = r + 1.5;
+
+        if (remotePlayer && !remotePlayer.isDead) {
+          const dEnemy = Math.hypot(remotePlayer.x - expX, (remotePlayer.y + 0.7) - expY, remotePlayer.z - expZ);
+          if (dEnemy <= blastRadius) {
+            const dmg = Math.max(15, Math.floor((1.0 - dEnemy / blastRadius) * 85));
+            const a = Math.atan2(remotePlayer.x - expX, remotePlayer.z - expZ);
+            const f = (1.0 - dEnemy / blastRadius) * 1.3;
+            const kbX = Math.sin(a) * f * 16;
+            const kbZ = Math.cos(a) * f * 16;
+            const kbY = f * 0.45 + 0.35;
+
+            remotePlayer.isHurt = 0.2;
+            aDmg(remotePlayer, dmg, localPlayer, true);
+
+            // 🌟 2. RPG 爆炸傷害加上 QoS 1
+            NetManager.send({
+              type: "DAMAGE_TAKEN",
+              amount: dmg,
+              kbX: kbX,
+              kbZ: kbZ,
+              kbY: kbY,
+              isCrit: false,
+              ignoreIFrame: true
+            }, 1);
+
+            cBP(remotePlayer.x, remotePlayer.y + 0.7, remotePlayer.z, 0xff1744);
+          }
+        }
+
+        if (!localPlayer.isDead) {
+          const dSelf = Math.hypot(localPlayer.x - expX, (localPlayer.y + 0.7) - expY, localPlayer.z - expZ);
+          if (dSelf <= blastRadius) {
+            const dmg = Math.max(10, Math.floor((1.0 - dSelf / blastRadius) * 60));
+            aDmg(localPlayer, dmg, rpg.owner);
+            const a = Math.atan2(localPlayer.x - expX, localPlayer.z - expZ);
+            const f = (1.0 - dSelf / blastRadius) * 0.8;
+            localPlayer.vx += Math.sin(a) * f * 12;
+            localPlayer.vz += Math.cos(a) * f * 12;
+            localPlayer.vy += f * 0.4 + 0.2;
+          }
+        }
+        uHUD();
       }
-    }
-  }
-
-  // 🌟 單一封包傳送全部方塊
-  NetManager.send({ 
-    type: "RPG_EXPLODE", 
-    rpgId: rpg.id, 
-    x: expX, 
-    y: expY, 
-    z: expZ,
-    blocks: brokenBlocks 
-  });
-
-  if (bd) bVM();
-  cMCExplosion(expX, expY, expZ);
-  AE.play("tnt_explode");
-
-  const blastRadius = r + 1.5;
-
-  if (remotePlayer && !remotePlayer.isDead) {
-    const dEnemy = Math.hypot(remotePlayer.x - expX, (remotePlayer.y + 0.7) - expY, remotePlayer.z - expZ);
-    if (dEnemy <= blastRadius) {
-      const dmg = Math.max(15, Math.floor((1.0 - dEnemy / blastRadius) * 85));
-      const a = Math.atan2(remotePlayer.x - expX, remotePlayer.z - expZ);
-      const f = (1.0 - dEnemy / blastRadius) * 1.3;
-      const kbX = Math.sin(a) * f * 16;
-      const kbZ = Math.cos(a) * f * 16;
-      const kbY = f * 0.45 + 0.35;
-
-      remotePlayer.isHurt = 0.2;
-      aDmg(remotePlayer, dmg, localPlayer, true);
-
-      NetManager.send({
-        type: "DAMAGE_TAKEN",
-        amount: dmg,
-        kbX: kbX,
-        kbZ: kbZ,
-        kbY: kbY,
-        isCrit: false,
-        ignoreIFrame: true
-      });
-
-      cBP(remotePlayer.x, remotePlayer.y + 0.7, remotePlayer.z, 0xff1744);
-    }
-  }
-
-  if (!localPlayer.isDead) {
-    const dSelf = Math.hypot(localPlayer.x - expX, (localPlayer.y + 0.7) - expY, localPlayer.z - expZ);
-    if (dSelf <= blastRadius) {
-      const dmg = Math.max(10, Math.floor((1.0 - dSelf / blastRadius) * 60));
-      aDmg(localPlayer, dmg, rpg.owner);
-      const a = Math.atan2(localPlayer.x - expX, localPlayer.z - expZ);
-      const f = (1.0 - dSelf / blastRadius) * 0.8;
-      localPlayer.vx += Math.sin(a) * f * 12;
-      localPlayer.vz += Math.cos(a) * f * 12;
-      localPlayer.vy += f * 0.4 + 0.2;
-    }
-  }
-  uHUD();
-}
 
       function xTNT(tnt) {
         const tx = Math.floor(tnt.mesh.position.x),
@@ -4649,8 +4653,10 @@ if (!localPlayer.isDead) {
                 if (bt > 0 && !protectedBlocks.includes(bt)) {
                   sB(bx, by, bz, 0);
                   bd = true;
-                  // 🌟 只同步方塊消失，不再在被炸毀的每顆方塊上噴出彩色粒子
-                  if (isHost) NetManager.send({ type: "BLOCK_BREAK", x: bx, y: by, z: bz, isExplosion: true });
+                  // 🌟 TNT 炸毀的方塊加上 QoS 1
+                  if (isHost) {
+                    NetManager.send({ type: "BLOCK_BREAK", x: bx, y: by, z: bz, isExplosion: true }, 1);
+                  }
                 }
               }
             }
@@ -4660,7 +4666,6 @@ if (!localPlayer.isDead) {
         if (bd) bVM();
         AE.play("tnt_explode");
 
-        // 🌟 產生 Minecraft 爆炸煙霧團
         cMCExplosion(tx + 0.5, ty + 0.5, tz + 0.5);
 
         if (!localPlayer.isDead) {
